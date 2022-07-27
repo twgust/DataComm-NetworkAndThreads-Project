@@ -1,2 +1,3 @@
 # DataComm-NetworkAndThreads-Project
-## WIP
+## WIP 
+### See attached pdf in repo for product description
