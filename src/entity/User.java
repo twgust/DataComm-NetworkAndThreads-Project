@@ -13,11 +13,14 @@ import java.io.Serializable;
  */
 public class User implements Serializable {
     private String username;
-    private ImageIcon image;
+    //private ImageIcon image;
+    /*
     public User(String username, ImageIcon image){
         this.username = username;
         this.image = image;
     }
+
+     */
     public User(String userName){
         this.username = userName;
     }
@@ -25,21 +28,41 @@ public class User implements Serializable {
     public String getUsername() {
         return username;
     }
-
+    /*
     public ImageIcon getImage() {
         return image;
     }
-
-    public String printUser(){
-        StringBuilder buildUserPrintMsg = new StringBuilder();
-        if(getUsername() != null){
-            buildUserPrintMsg.append("USERNAME: ").append(getUsername());
-            if(getImage() != null){
-                buildUserPrintMsg.append("Image: ").append("True");
-                return buildUserPrintMsg.toString();
-            }
-            else buildUserPrintMsg.append("Image: ").append("False");
+     */
+    @Override
+    public boolean equals(Object o){
+        if (this == o) {
+            return true;
         }
-        return buildUserPrintMsg.toString();
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        User user = (User) o;
+
+        // using string.equals,
+        // not user.equals which we are overriding.
+        if (!username.equals(user.username)) {
+            return false;
+        }
+
+
+        return true;
+    }
+    @Override
+    public int hashCode()
+    {
+        int result = username.hashCode();
+        result = 31 * result;
+        return result;
+    }
+    @Override
+    public String toString() {
+        return "{" +
+                "name='" + username + '}';
     }
 }

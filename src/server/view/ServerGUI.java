@@ -12,7 +12,6 @@ public class ServerGUI {
 
     public ServerGUI(ServerController serverController, int width, int height){
         this.serverController = serverController;
-
         setupFrame(width,height);
     }
 
@@ -36,5 +35,4 @@ public class ServerGUI {
         frame.setResizable(false);
         frame.setVisible(true);
     }
-
 }

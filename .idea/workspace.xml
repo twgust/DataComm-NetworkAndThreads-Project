@@ -2,19 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/client/RunClient.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/RunServer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/controller/ServerController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/view/ServerGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/server/controller/Buffer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/RunClients.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/view/ClientView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/view/ClientGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/entity/Message.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/Message.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/RunClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/RunClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/controller/ClientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/entity/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/Server.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/view/ServerView.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/RunServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/RunServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/ServerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerController.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,7 +46,7 @@
       <recent name="server" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.server.RunServer">
+  <component name="RunManager" selected="Application.RunClient">
     <configuration name="RunClient" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="client.RunClient" />
       <module name="DataComm-NetworkAndThreads-Project" />
@@ -81,8 +75,8 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.RunClient" />
         <item itemvalue="Application.server.RunServer" />
-        <item itemvalue="Application.client.RunClients" />
       </list>
     </recent_temporary>
   </component>
@@ -96,6 +90,7 @@
       <updated>1658847316728</updated>
       <workItem from="1658847319118" duration="8421000" />
       <workItem from="1658916169891" duration="9609000" />
+      <workItem from="1659033745349" duration="6723000" />
     </task>
     <servers />
   </component>

@@ -1,9 +1,9 @@
 package server.controller;
-
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
+
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
 
 
@@ -44,6 +44,8 @@ public class ServerController {
 
     private ServerSocket serverSocket;
     private final int port;
+    private Buffer buffer;
+
 
     /**
      * Constructor
@@ -51,6 +53,7 @@ public class ServerController {
      */
     public ServerController(int port){
         this.port = port;
+        buffer = new Buffer();
     }
 
     /**
@@ -59,6 +62,8 @@ public class ServerController {
      */
     public void startServer(){
         ServerConnect connect = new ServerConnect();
+        Thread T = new Thread(connect);
+        T.start();
     }
 
     /**
@@ -77,6 +82,7 @@ public class ServerController {
      */
     private void handleServerException(IOException e, Thread thread){
         if(e instanceof SocketException){
+            e.printStackTrace();
             System.out.println(serverStr + "socket exception on " + thread.getName());
         }
         else if(e instanceof EOFException){
@@ -115,10 +121,21 @@ public class ServerController {
         @Override
         public void run(){
             try {
-                serverSocket = new ServerSocket();
+                serverSocket = new ServerSocket(port);
+                int i = 1;
+
+                // While server is running, accept all incoming clients
+                while(true){
+                    Socket socket = serverSocket.accept();
+                    System.out.println(socket.getPort());
+                    buffer.put(socket.getRemoteSocketAddress().toString(), socket);
+                    i++;
+                    // Start new thread for
+                    Thread.sleep(2000);
+                }
             }
-            catch (IOException e) {
-                handleServerException(e, Thread.currentThread());}
+            catch (IOException e) {handleServerException(e, Thread.currentThread());}
+            catch (InterruptedException e) {e.printStackTrace();}
         }
     }
 

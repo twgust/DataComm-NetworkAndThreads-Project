@@ -3,7 +3,10 @@ package client.controller;
 import entity.User;
 
 import javax.swing.*;
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 /**
@@ -57,7 +60,9 @@ public class ClientController {
     }
 
     public void connectToServer(){
-
+        ClientConnect connectThread = new ClientConnect();
+        Thread t = new Thread(connectThread);
+        t.start();
     }
     public void sendMessage(String message, ImageIcon icon){
 
@@ -71,6 +76,14 @@ public class ClientController {
     private class ClientConnect implements Runnable{
         @Override
         public void run() {
+
+
+            try {
+                InetAddress address = InetAddress.getByName(ip);
+                clientSocket = new Socket(address, port);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
         }
     }
