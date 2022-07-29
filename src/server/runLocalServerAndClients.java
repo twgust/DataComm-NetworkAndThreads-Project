@@ -12,10 +12,14 @@ public class runLocalServerAndClients {
         // distinguish between local clients by port number, not remote address
         ClientController clientController1 = new ClientController("127.0.0.1", 9301);
         ClientController clientController2 = new ClientController("127.0.0.1", 9301);
-        clientController1.connectToServer();
-        clientController2.connectToServer();
-        clientController1.registerUser("MyUserName");
-        clientController2.registerUser("AnotherUserName");
+        ClientController clientController3 = new ClientController("127.0.0.1", 9301);
+
+        clientController1.connectToServer("UserONE-1");
+        clientController2.connectToServer("UserOne-2");
+        clientController3.connectToServer("SUPERUSER-3");
+
+        //clientController1.registerUser("MyUserName");
+        //clientController2.registerUser("AnotherUserName");
 
     }
 }

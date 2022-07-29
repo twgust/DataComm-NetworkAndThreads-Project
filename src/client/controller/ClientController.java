@@ -7,9 +7,12 @@ import javax.swing.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,40 +71,56 @@ public class ClientController {
     private User user;
 
     public ClientController(String ip, int port){
-        log = Logger.getLogger("client");
         executorService = Executors.newSingleThreadExecutor();
+        log = Logger.getLogger("client");
         this.port = port;
         this.ip = ip;
     }
     public ClientController(){
 
     }
-    public void registerUser(String username){
-        executorService.execute(()  ->{
-            try{
-                OutputStream oos = clientSocket.getOutputStream();
-                DataOutputStream dos = new DataOutputStream(oos);
-                dos.writeUTF(username);
-                dos.flush();
-            }catch (Exception e){
-                e.printStackTrace();
-            }
+    public void createUser(String name){
 
-        });
     }
 
-    public void connectToServer(){
-        ClientConnect connectThread = new ClientConnect();
-        Thread t = new Thread(connectThread);
-        System.out.println("starting thread " + t.getName());
-        t.start();
+    /**
+     * If a client hasn't been connected to the server before and has no username
+     *
+     * @param username
+     */
+    public void registerUser(String username){
+
+    }
+
+    public void connectToServer(String username){
+        //executorService.execute(new ClientConnect(username));
+        ClientConnect connect = new ClientConnect(username);
+        Future<?> connectTask = executorService.submit(connect);
+        while(true){
+            if (connectTask.isDone()){
+                break;
+            }
+        }
+        executorService.execute(new ReceiveMessage());
+
+    }
+    public void disconnectFromServer(){
+        ClientDisconnect disconnectThread = new ClientDisconnect();
+        Thread t = new Thread(disconnectThread);
         try{
             t.join();
         }catch (InterruptedException e){
             e.printStackTrace();
         }
-
     }
+
+    /**
+     * method overloading for send chat msg functions,
+     * since a Message can contain
+     * Text OR Image OR Text AND Image
+     * @param message String, any alphanumeric + special character
+     * @param icon Image, jpg or png
+     */
     public void sendChatMsg(String message, ImageIcon icon){
 
     }
@@ -111,12 +130,42 @@ public class ClientController {
     public void sendChatMsg(ImageIcon icon){
 
     }
+
+    /**
+     * *** WIP ***
+     */
     private class ReceiveMessage implements Runnable{
         @Override
         public void run() {
-            while(true){
+            while(!clientSocket.isClosed()){
+                    try{
+                        is = clientSocket.getInputStream();
+                        ois = new ObjectInputStream(is);
+                        Object o = ois.readObject();
+                        serverResponseHandler(o);
 
+                        Thread.sleep(5000);
+                    }
+                    catch (Exception e) {e.printStackTrace();}
             }
+        }
+    }
+
+    /**
+     * *** WIP ****
+     * ineffective solution
+     * @param o Object read from ObjectInputStream
+     */
+    private void serverResponseHandler(Object o){
+        if(o instanceof List){
+            for (Object element: (List<?>)o) {
+                if(element instanceof User){
+                    // o =  List<User>
+                }
+            }
+        }
+        else if (o instanceof Message){
+            // o = Message
         }
     }
 
@@ -134,8 +183,9 @@ public class ClientController {
         /**
          * Default constructor used for unregistered clients
          */
-        public ClientConnect(){
-
+        private String username;
+        public ClientConnect(String username){
+            this.username = username;
         }
 
         @Override
@@ -143,24 +193,23 @@ public class ClientController {
             try {
                 InetAddress address = InetAddress.getByName(ip);
                 clientSocket = new Socket(address, port);
+                os = clientSocket.getOutputStream();
+                oos = new ObjectOutputStream(os);
+                oos.writeObject(new User(this.username));
+                os.flush();
+                oos.flush();
+                // start listening to messages from server
+                // after connection has been established
             }
             catch (IOException e) {e.printStackTrace();}
         }
     }
+
     private class ClientDisconnect implements Runnable{
         @Override
         public void run() {
             try{
-                if(!clientSocket.isInputShutdown()){
-                    // close input streams
-                    ois.close();
-                    is.close();
-                }
-                if(!clientSocket.isOutputShutdown()){
-                    // shutdown output streams
-                    os.close();
-                    oos.close();
-                }
+                clientSocket.close();
             }
             catch (NullPointerException e ){
                 log.log(Level.WARNING, "socket not initialized");

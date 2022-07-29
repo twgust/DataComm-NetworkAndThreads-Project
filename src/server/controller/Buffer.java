@@ -4,6 +4,8 @@ import entity.User;
 
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,5 +54,8 @@ public class Buffer {
     }
     protected synchronized void printAllUsers(){
         System.out.println(clientBuffer.keySet());
+    }
+    protected synchronized Set<User> getKeySet(){
+       return  clientBuffer.keySet();
     }
 }
