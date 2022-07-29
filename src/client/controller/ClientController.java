@@ -1,13 +1,17 @@
 package client.controller;
 
+import entity.Message;
 import entity.User;
 
 import javax.swing.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -39,6 +43,8 @@ import java.util.ArrayList;
  */
 
 public class ClientController {
+    private Logger log;
+
     // A list containing all currently online users
     private ArrayList<User> userOnlineList;
 
@@ -50,54 +56,120 @@ public class ClientController {
     private String ip;
     private int port;
 
-    public ClientController(String ip, int port){
-        this.ip = ip;
-        this.port = port;
+    private InputStream is;
+    private ObjectInputStream ois;
 
+    private OutputStream os;
+    private ObjectOutputStream oos;
+
+    private ExecutorService executorService;
+    private ReceiveMessage receiveMessage;
+    private SendMessage sendMessage;
+    private User user;
+
+    public ClientController(String ip, int port){
+        log = Logger.getLogger("client");
+        executorService = Executors.newSingleThreadExecutor();
+        this.port = port;
+        this.ip = ip;
     }
     public ClientController(){
 
     }
+    public void registerUser(String username){
+        executorService.execute(()  ->{
+            try{
+                OutputStream oos = clientSocket.getOutputStream();
+                DataOutputStream dos = new DataOutputStream(oos);
+                dos.writeUTF(username);
+                dos.flush();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
 
-    public void connectToServer(String username){
-        ClientConnect connectThread = new ClientConnect(username);
+        });
+    }
+
+    public void connectToServer(){
+        ClientConnect connectThread = new ClientConnect();
         Thread t = new Thread(connectThread);
+        System.out.println("starting thread " + t.getName());
         t.start();
-    }
-    public void sendMessage(String message, ImageIcon icon){
+        try{
+            t.join();
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
 
     }
-    public void sendMessage(String message){
+    public void sendChatMsg(String message, ImageIcon icon){
 
     }
-    public void sendMessage(ImageIcon icon){
+    public void sendChatMsg(String message){
 
     }
-    private class ClientConnect implements Runnable{
-        private String username;
-        public ClientConnect(String username){
-            this.username = username;
+    public void sendChatMsg(ImageIcon icon){
+
+    }
+    private class ReceiveMessage implements Runnable{
+        @Override
+        public void run() {
+            while(true){
+
+            }
+        }
+    }
+
+    private class SendMessage implements Runnable{
+        public SendMessage(Message message){
+
         }
         @Override
         public void run() {
 
+        }
+    }
 
+    private class ClientConnect implements Runnable{
+        /**
+         * Default constructor used for unregistered clients
+         */
+        public ClientConnect(){
+
+        }
+
+        @Override
+        public void run() {
             try {
                 InetAddress address = InetAddress.getByName(ip);
                 clientSocket = new Socket(address, port);
-                OutputStream oos = clientSocket.getOutputStream();
-                DataOutputStream dos = new DataOutputStream(oos);
-                dos.writeUTF(username);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
-
+            catch (IOException e) {e.printStackTrace();}
         }
     }
     private class ClientDisconnect implements Runnable{
         @Override
         public void run() {
+            try{
+                if(!clientSocket.isInputShutdown()){
+                    // close input streams
+                    ois.close();
+                    is.close();
+                }
+                if(!clientSocket.isOutputShutdown()){
+                    // shutdown output streams
+                    os.close();
+                    oos.close();
+                }
+            }
+            catch (NullPointerException e ){
+                log.log(Level.WARNING, "socket not initialized");
+                e.printStackTrace();
 
+            } catch (IOException e) {
+                log.log(Level.WARNING, " exception in closing streams");
+                e.printStackTrace();
+            }
         }
     }
 }

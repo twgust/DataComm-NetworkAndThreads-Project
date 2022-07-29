@@ -1,11 +1,15 @@
 package server.controller;
+
 import entity.User;
-
-import java.io.*;
-
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,6 +53,7 @@ public class ServerController {
     private final int port;
     private Buffer buffer;
     private UserConnectionCallback userConnection;
+    private ExecutorService threadPool;
 
 
 
@@ -57,7 +62,9 @@ public class ServerController {
      * @param port The port on which the Server is run on.
      */
     public ServerController(int port){
-        log = Logger.getLogger(ServerController.class.getName());
+        log = Logger.getLogger("Server");
+        threadPool = Executors.newCachedThreadPool();
+
         buffer = new Buffer();
         this.port = port;
     }
@@ -104,14 +111,22 @@ public class ServerController {
     private class ReceiveMessage implements Runnable{
         private Socket socket;
         public ReceiveMessage(Socket socket){
-
+            this.socket = socket;
         }
         @Override
         public void run() {
             while(true){
+                try{
 
+                    System.out.println("receiving message from client " +
+                            "<" + socket.getRemoteSocketAddress() + "> " +
+                            "sleeping for 3.5s");
+                    Thread.sleep(3500);
+                }
+                catch (InterruptedException e){
+                    e.printStackTrace();
+                }
             }
-            // ObjectInputStream reads Message from client
         }
     }
 
@@ -122,7 +137,6 @@ public class ServerController {
     private class SendMessage implements Runnable{
         @Override
         public void run() {
-            // ObjectOutputStream writes Message to List of recipients by invoking message.getRecipientList()
 
         }
     }
@@ -141,21 +155,18 @@ public class ServerController {
                 // in a real world application the hashmap would allow for fast lookup for duplicate usernames
                 // given that User is the key
                 while(true){
-                    Socket socket = serverSocket.accept();
-
-                    InputStream inputStream = socket.getInputStream();
-                    DataInputStream dataInputStream = new DataInputStream(inputStream);
-                    String username = dataInputStream.readUTF();
+                    Socket cSocket = serverSocket.accept();
+                    InputStream is = cSocket.getInputStream();
+                    DataInputStream dis = new DataInputStream(is);
+                    String username = dis.readUTF();
                     User user = new User(username);
-
-                    buffer.put(user, socket);
+                    buffer.put(user, cSocket);
                     userConnection.onUserConnectListener(user);
 
-                    inputStream.close();
-                    dataInputStream.close();
-
-                    // Start new thread for
-                    Thread.sleep(2000);
+                    threadPool.execute(new ReceiveMessage(cSocket));
+                    Thread.sleep(250);
+                    //next client is processed,
+                    // else thread just waits because serversocket.accept is a blocking operation
                 }
             }
             catch (IOException e) {handleServerException(e, Thread.currentThread());}
