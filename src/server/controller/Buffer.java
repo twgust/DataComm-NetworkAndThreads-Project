@@ -38,6 +38,9 @@ public class Buffer {
         }
         return clientBuffer.get(user);
     }
+    protected synchronized void removeUser(User user){
+
+    }
 
     /**
      * @return size, represents nr of clients connected.

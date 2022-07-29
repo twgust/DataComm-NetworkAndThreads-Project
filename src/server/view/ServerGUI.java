@@ -1,18 +1,33 @@
 package server.view;
 
+import entity.User;
 import server.controller.ServerController;
+import server.controller.UserConnection;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class ServerGUI {
+public class ServerGUI implements UserConnection {
     private ServerController serverController;
+    private JTextArea textArea;
     private JFrame frame;
 
 
     public ServerGUI(ServerController serverController, int width, int height){
-        this.serverController = serverController;
         setupFrame(width,height);
+        this.serverController = serverController;
+        serverController.addConnectionListener(this);
+
+
+    }
+    @Override
+    public void onUserDisconnectListener(User user) {
+
+    }
+
+    @Override
+    public void onUserConnectListener(User user) {
+        logMessageToGui(user.toString() + " connected to server");
     }
 
     /**
@@ -31,8 +46,15 @@ public class ServerGUI {
                 height = minHeight;
             }
         }
+        textArea = new JTextArea();
         frame.setSize(new Dimension(width,height));
         frame.setResizable(false);
         frame.setVisible(true);
+        frame.add(textArea);
+    }
+    private void logMessageToGui(String message){
+        SwingUtilities.invokeLater(()->{
+            textArea.append(message + "\n");
+        });
     }
 }

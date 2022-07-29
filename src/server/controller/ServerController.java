@@ -48,6 +48,8 @@ public class ServerController {
     private ServerSocket serverSocket;
     private final int port;
     private Buffer buffer;
+    private UserConnection userConnection;
+
 
 
     /**
@@ -59,7 +61,9 @@ public class ServerController {
         buffer = new Buffer();
         this.port = port;
     }
-
+    public void addConnectionListener(UserConnection connection){
+        this.userConnection = connection;
+    }
     /**
      * Starts and initializes server,
      * invoked by ServerGUI.
@@ -105,6 +109,7 @@ public class ServerController {
         @Override
         public void run() {
             while(true){
+
             }
             // ObjectInputStream reads Message from client
         }
@@ -141,7 +146,10 @@ public class ServerController {
                     InputStream inputStream = socket.getInputStream();
                     DataInputStream dataInputStream = new DataInputStream(inputStream);
                     String username = dataInputStream.readUTF();
-                    buffer.put(new User(username), socket);
+                    User user = new User(username);
+
+                    buffer.put(user, socket);
+                    userConnection.onUserConnectListener(user);
 
                     inputStream.close();
                     dataInputStream.close();
