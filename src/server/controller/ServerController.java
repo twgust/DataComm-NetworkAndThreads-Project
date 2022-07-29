@@ -1,10 +1,13 @@
 package server.controller;
-import java.io.EOFException;
-import java.io.IOException;
+import entity.User;
+
+import java.io.*;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -40,7 +43,7 @@ import java.net.SocketException;
  */
 
 public class ServerController {
-    private static final String serverStr = "Server: ";
+    private final Logger log;
 
     private ServerSocket serverSocket;
     private final int port;
@@ -52,8 +55,9 @@ public class ServerController {
      * @param port The port on which the Server is run on.
      */
     public ServerController(int port){
-        this.port = port;
+        log = Logger.getLogger(ServerController.class.getName());
         buffer = new Buffer();
+        this.port = port;
     }
 
     /**
@@ -82,11 +86,10 @@ public class ServerController {
      */
     private void handleServerException(IOException e, Thread thread){
         if(e instanceof SocketException){
-            e.printStackTrace();
-            System.out.println(serverStr + "socket exception on " + thread.getName());
+            log.log(Level.SEVERE, e.getMessage());
         }
         else if(e instanceof EOFException){
-            System.out.println("eof on " + thread.getName());
+            log.log(Level.WARNING, e.getMessage());
         }
     }
 
@@ -95,10 +98,15 @@ public class ServerController {
      * Reads from connected clients ObjectInputStream.
      */
     private class ReceiveMessage implements Runnable{
+        private Socket socket;
+        public ReceiveMessage(Socket socket){
+
+        }
         @Override
         public void run() {
+            while(true){
+            }
             // ObjectInputStream reads Message from client
-
         }
     }
 
@@ -123,13 +131,21 @@ public class ServerController {
             try {
                 serverSocket = new ServerSocket(port);
                 int i = 1;
-
-                // While server is running, accept all incoming clients
+                // While server is running, accept all incoming clients, read their username
+                // add Key-Value pair: <User,Socket> to buffer
+                // in a real world application the hashmap would allow for fast lookup for duplicate usernames
+                // given that User is the key
                 while(true){
                     Socket socket = serverSocket.accept();
-                    System.out.println(socket.getPort());
-                    buffer.put(socket.getRemoteSocketAddress().toString(), socket);
-                    i++;
+
+                    InputStream inputStream = socket.getInputStream();
+                    DataInputStream dataInputStream = new DataInputStream(inputStream);
+                    String username = dataInputStream.readUTF();
+                    buffer.put(new User(username), socket);
+
+                    inputStream.close();
+                    dataInputStream.close();
+
                     // Start new thread for
                     Thread.sleep(2000);
                 }

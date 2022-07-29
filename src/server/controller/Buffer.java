@@ -1,18 +1,13 @@
 package server.controller;
 
+import entity.User;
+
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *  socket.getRemoteSocketAddress.toString() should work quite well as a key for the client Map<String,Socket>
- *  since no two connected clients (sockets) can have the same ip address and port combination.
- *  Even if two clients from the same local network connect to the server,
- *  E.g. 193.29.107.246, their port will differ:
- *  client 1: 193.29.107.246:62353
- *  client 2: 193.29.107.246:62354
- *  resulting in a different hashcode.
+
 
 
 /*
@@ -20,28 +15,39 @@ import java.util.logging.Logger;
  * to perform operations on the data structure
  */
 public class Buffer {
-    private final HashMap<String, Socket> clientBuffer;
-    private final Logger logger;
+    private final HashMap<User, Socket> clientBuffer;
+    private final Logger log;
 
     public Buffer(){
         clientBuffer = new HashMap<>();
-        logger = Logger.getLogger(Buffer.class.getName());
+        log = Logger.getLogger("Buffer");
     }
 
-    protected synchronized void put(String clientInetAddress, Socket client){
-        clientBuffer.put(clientInetAddress,client);
-        logger.log(Level.INFO, "CLIENT " + clientInetAddress + " connected to server");
+    protected synchronized void put(User user, Socket client){
+        clientBuffer.put(user,client);
+        log.log(Level.INFO, "{username='" + user.getUsername() +"'"
+                + "socket='" + client.getRemoteSocketAddress() +"'}"
+                + " connected to server");
         notifyAll();
     }
 
-    protected synchronized Socket get(String clientInetAddress) throws InterruptedException{
+    protected synchronized Socket get(User user) throws InterruptedException{
         while(clientBuffer.isEmpty()){
-            logger.log(Level.INFO, "buffer empty, waiting for clients to be added to buffer...");
+            log.log(Level.INFO, "buffer empty, waiting for clients to be added to buffer...");
             wait();
         }
-        return clientBuffer.get(clientInetAddress);
+        return clientBuffer.get(user);
     }
+
+    /**
+     * @return size, represents nr of clients connected.
+     */
     protected synchronized int size(){
-        return clientBuffer.size();
+        int clients = clientBuffer.size();
+        log.log(Level.INFO, "#" + clients + " connected to server");
+        return clients;
+    }
+    protected synchronized void printAllUsers(){
+        System.out.println(clientBuffer.keySet());
     }
 }

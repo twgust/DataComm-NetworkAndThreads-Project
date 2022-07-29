@@ -3,7 +3,7 @@ package client.controller;
 import entity.User;
 
 import javax.swing.*;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -59,8 +59,8 @@ public class ClientController {
 
     }
 
-    public void connectToServer(){
-        ClientConnect connectThread = new ClientConnect();
+    public void connectToServer(String username){
+        ClientConnect connectThread = new ClientConnect(username);
         Thread t = new Thread(connectThread);
         t.start();
     }
@@ -74,6 +74,10 @@ public class ClientController {
 
     }
     private class ClientConnect implements Runnable{
+        private String username;
+        public ClientConnect(String username){
+            this.username = username;
+        }
         @Override
         public void run() {
 
@@ -81,6 +85,9 @@ public class ClientController {
             try {
                 InetAddress address = InetAddress.getByName(ip);
                 clientSocket = new Socket(address, port);
+                OutputStream oos = clientSocket.getOutputStream();
+                DataOutputStream dos = new DataOutputStream(oos);
+                dos.writeUTF(username);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
