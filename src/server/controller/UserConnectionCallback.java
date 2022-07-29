@@ -2,7 +2,7 @@ package server.controller;
 
 import entity.User;
 
-public interface UserConnection {
+public interface UserConnectionCallback {
     void onUserDisconnectListener(User user);
     void onUserConnectListener(User user);
 }

@@ -48,7 +48,7 @@ public class ServerController {
     private ServerSocket serverSocket;
     private final int port;
     private Buffer buffer;
-    private UserConnection userConnection;
+    private UserConnectionCallback userConnection;
 
 
 
@@ -61,7 +61,7 @@ public class ServerController {
         buffer = new Buffer();
         this.port = port;
     }
-    public void addConnectionListener(UserConnection connection){
+    public void addConnectionListener(UserConnectionCallback connection){
         this.userConnection = connection;
     }
     /**

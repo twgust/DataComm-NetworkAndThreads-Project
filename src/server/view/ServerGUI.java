@@ -2,12 +2,12 @@ package server.view;
 
 import entity.User;
 import server.controller.ServerController;
-import server.controller.UserConnection;
+import server.controller.UserConnectionCallback;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class ServerGUI implements UserConnection {
+public class ServerGUI implements UserConnectionCallback {
     private ServerController serverController;
     private JTextArea textArea;
     private JFrame frame;
