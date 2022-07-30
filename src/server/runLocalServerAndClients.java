@@ -33,5 +33,17 @@ public class runLocalServerAndClients {
         ClientGUI gui3 = new ClientGUI(clientController3);
         gui3.connect("userThree");
 
+        // some more sleeping to simulate real behavior
+        try{
+            System.out.println("MAIN - about to disconnect a client");
+            Thread.sleep(2000);
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+        gui1.disconnect();
+        ClientController clientController4 = new ClientController("127.0.0.1", 9301);
+        ClientGUI gui4 = new ClientGUI(clientController4);
+        gui4.connect("newUser4");
+
     }
 }

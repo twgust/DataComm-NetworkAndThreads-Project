@@ -50,14 +50,15 @@ import java.util.logging.Logger;
 
 public class ServerController implements UserConnectionCallback {
     private final Logger log;
+
+    private final ExecutorService threadPool;
     private ServerSocket serverSocket;
+
     private final int port;
-    private Buffer buffer;
-    //private UserConnectionCallback clientConnectionListener;
-    private ExecutorService threadPool;
+    private final Buffer buffer;
 
     private ArrayList<UserConnectionCallback> clientConnectionListenerList;
-    private ArrayList<User> onlineClients;
+    private ArrayList<User> onlineUserList;
 
 
 
@@ -72,6 +73,11 @@ public class ServerController implements UserConnectionCallback {
         buffer = new Buffer();
         this.port = port;
     }
+
+    /**
+     * List of implementations so ServerGUI and ServerController can provide their own impl.
+     * @param connectionListener implementation of UserConnectionCallBack Interface
+     */
     public void addConnectionListener(UserConnectionCallback connectionListener){
         if(clientConnectionListenerList == null){
             clientConnectionListenerList = new ArrayList<>();
@@ -97,31 +103,35 @@ public class ServerController implements UserConnectionCallback {
     }
 
     /**
-     * Function for handling server exceptions,
-     * reusable for every Runnable task the server calls which can t(ServerConnect, ServerDisconnect...)
+     * WIP
+     * Function for handling Socket exceptions
      * @param e the exception to be handled
      * @param thread the thread in which the Exception occurred
      */
-    private void handleServerException(IOException e, Thread thread){
+    private void handleServerException(IOException e, Thread thread, String clientIP){
+        if(clientIP.isEmpty()){
+            clientIP = "unknown client";
+        }
         if(e instanceof SocketException){
-            log.log(Level.SEVERE, e.getMessage());
+            log.log(Level.SEVERE, LoggerUtil.ANSI_PURPLE + "\nClient: " + clientIP + " disconnected" + LoggerUtil.ANSI_BLUE);
         }
         else if(e instanceof EOFException){
             log.log(Level.WARNING, e.getMessage());
         }
-
     }
 
     /**
-     * Remove User object from buffer
-     * check size, if size = 0 don't fetch elements from buffer --> no clients to update + wait condition in buffer
-     * if size >= 1, fetch all keys 'User' Object(s)
-     * for each connected client (iterate over size) previously returned
+     * Removes disconnected K:User V: Socket from buffer,
+     * Removes User from onlineList
      * write to data structure of user to ObjectOutputStream
      * @param disconnectedClient the client whose socket was closed.
      */
     @Override
     public void onUserDisconnectListener(User disconnectedClient) {
+        buffer.removeUser(disconnectedClient);
+        onlineUserList.remove(disconnectedClient);
+        Set<User> set = buffer.getKeySet();
+        updateAllOnlineLists(set);
     }
 
     /**
@@ -132,48 +142,41 @@ public class ServerController implements UserConnectionCallback {
     @Override
     public void onUserConnectListener(User connectedClient) {
         System.out.println(connectedClient + " connected");
-        if(buffer.size() >= 1){
             Set<User> set = buffer.getKeySet();
 
             // if list isn't null there is no need to instantiate
             // the already existing instance and fill it once again
-            // simply remove the client and then execute the update function for all threads
-            if(onlineClients != null){
-                onlineClients.add(connectedClient);
+            // simply add the client.
+            if(onlineUserList != null){
+                onlineUserList.add(connectedClient);
                 updateAllOnlineLists(set);
             }
             // if list of online clients is null, we need to create and populate the list
-            if(onlineClients == null){
+            if(onlineUserList == null){
                 System.out.println("online clients is null, instantiating list");
-                onlineClients = new ArrayList<>();
-                onlineClients.addAll(set);
+                onlineUserList = new ArrayList<>();
+                onlineUserList.addAll(set);
                 updateAllOnlineLists(set);
             }
         }
-    }
+
 
     /**
-     * after populating the list in one of the callback interface implementations above,
-     * we send the list of connected clients to each connected client
-     * this is achieved by iterating over the set of users passed into the func.
-     * By invoking buffer.get(user) we can acquire a reference for each connected client
-     * since buffer is a hashmap<K,V>, where K = user and V = socket.
-     * @param set Set<User>, used for getting each value from the Buffer HashMap<User,Socket>
+     *
+     * Invoked by one of the connection callbacks (onUserConnect/onUserDisconnect)
+     * Iterates over all connected sockets, each socket is sent the updated onlineUserList
+     * @param set Set of Keys to enable access operation on the Buffer HashMap (K:User, V:Socket)
      */
     private void updateAllOnlineLists(Set<User> set){
-        // Iterate over all users in Set fetched from buffer
+        // Iterate over all users in Set fetched from buffer to get a reference to socket
         for (User user: set) {
             try{
-                // For each user, acquire a reference to the socket.
                 Socket clientSocket = buffer.get(user);
-
-                // Log the event to track which clients we are updating in cli
                 log.log(Level.INFO, LoggerUtil.ANSI_PURPLE + "Updating online list for "
                         + clientSocket.getRemoteSocketAddress().toString() + "\n" + LoggerUtil.ANSI_BLUE);
-
-                // For each user, execute the SendObject runnable,
-                // effectively updating each connected clients "currently online list"
-                threadPool.execute(new SendObject(this.onlineClients, clientSocket));
+                // For each user, execute the SendObject runnable, updating each clients OnlineList
+                threadPool.execute(new SendObject
+                        (this.onlineUserList, clientSocket, clientSocket.getRemoteSocketAddress().toString()));
             }catch (InterruptedException e){e.printStackTrace();}
         }
     }
@@ -185,13 +188,16 @@ public class ServerController implements UserConnectionCallback {
         private ArrayList<User> userList;
         private Message message;
         private Socket client;
+        private String clientIP;
         public SendObject(Message message, Socket client){
             this.message = message;
             this.client = client;
         }
-        public SendObject(ArrayList<User> userArrayList, Socket client){
+        public SendObject(ArrayList<User> userArrayList, Socket client, String ip){
             this.userList = userArrayList;
             this.client = client;
+            this.clientIP = ip;
+
         }
         @Override
         public void run() {
@@ -210,9 +216,8 @@ public class ServerController implements UserConnectionCallback {
 
             } catch (IOException e) {
                 if(e instanceof SocketException){
-                    handleServerException(e, Thread.currentThread());
+                    handleServerException(e, Thread.currentThread(), clientIP);
                 }
-                e.printStackTrace();
             }
         }
     }
@@ -248,16 +253,6 @@ public class ServerController implements UserConnectionCallback {
             try {
                 serverSocket = new ServerSocket(port);
                 log.log(Level.INFO,  LoggerUtil.ANSI_GREEN + " Server running...\n" + LoggerUtil.ANSI_BLUE);
-
-                // While server is running,
-                // 1 accept all incoming clients,
-                //      For each client:
-                //          read the User object from ObjectInputStream
-                //          add Key-Value pair: <User,Socket> to buffer
-
-                // in a real world application the hashmap would
-                // allow for fast lookup for duplicate usernames
-                // given that User is the key
                 while(true){
                     Socket cSocket = serverSocket.accept();
                     InputStream is = cSocket.getInputStream();
@@ -265,18 +260,17 @@ public class ServerController implements UserConnectionCallback {
                     User user = (User) ois.readObject();
                     buffer.put(user, cSocket);
 
+                    // List of implementations, so both ServerController and ServerGUI and
+                    // can provide their own implementations of the interface.
                     for (UserConnectionCallback callbackImpl: clientConnectionListenerList) {
                         callbackImpl.onUserConnectListener(user);
                     }
 
 
-                    //threadPool.execute(new ReceiveMessage(cSocket));
                     Thread.sleep(250);
-                    //next client is processed,
-                    // else thread just waits because serversocket.accept is a blocking operation
                 }
             }
-            catch (IOException e) {handleServerException(e, Thread.currentThread());}
+            catch (IOException e) {handleServerException(e, Thread.currentThread(), "");}
             catch (InterruptedException e) {e.printStackTrace();}
             catch (ClassNotFoundException e) {e.printStackTrace();}
         }

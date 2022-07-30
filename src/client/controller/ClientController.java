@@ -8,6 +8,7 @@ import javax.swing.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -84,12 +85,14 @@ public class ClientController {
         sendMessageExecutor = Executors.newSingleThreadExecutor();
         userOnlineList = new ArrayList<>();
     }
-    public void addCallBackListener(IUserConnectionCallback impl){
+
+    public void addCallBackListener(IUserConnectionCallback impl) {
         this.connectedUsersCallback = impl;
     }
 
     /**
      * If a client hasn't been connected to the server before and has no username
+     *
      * @param username input from gui
      */
     public void registerUser(String username) {
@@ -98,6 +101,7 @@ public class ClientController {
 
     /**
      * TODO add image icon as second input parameter
+     *
      * @param username user
      */
     public void connectToServer(String username) {
@@ -114,12 +118,14 @@ public class ClientController {
     }
 
     public void disconnectFromServer() {
+        connectAndReceiveExecutor.shutdownNow();
+        ExecutorService disconnectClient = Executors.newSingleThreadExecutor();
+        disconnectClient.execute(new ClientDisconnect());
     }
 
     /**
      * method overloading for send chat msg functions,
-     * since a Message can contain
-     * Text OR Image OR Text AND Image
+     * since a Message can contain: Text OR Image OR Text AND Image
      *
      * @param message String, any alphanumeric + special character
      * @param icon    Image, jpg or png
@@ -127,7 +133,7 @@ public class ClientController {
     public void sendChatMsg(String message, ImageIcon icon, ArrayList<User> recipients) {
         // consider storing messages in some data struct.
         // user == client == author of message.
-        if(user != null){
+        if (user != null) {
             Message imageTextMsg = new Message(message, icon, user, recipients, MessageType.TEXT_IMAGE);
 
             //todo will probably implement future object,
@@ -147,7 +153,7 @@ public class ClientController {
 
     /**
      * Runnable for reading messages from server.
-     *
+     * <p>
      * Assignment states that all communication is to be done through Object IO Streams
      * would be way easier to handle responses for both client and server if communication
      * was done through json formatted strings.
@@ -162,6 +168,7 @@ public class ClientController {
         public void run() {
             while (!clientSocket.isClosed()) {
                 try {
+                    System.out.println("reading from server");
                     is = clientSocket.getInputStream();
                     ois = new ObjectInputStream(is);
                     Object o = ois.readObject();
@@ -169,18 +176,13 @@ public class ClientController {
                         handleListResponse(o, userOnlineList);
 
                         // call the interface after response has been handled
-                        // --> gui updates
                         connectedUsersCallback.usersUpdated(userOnlineList);
+                    } else if (o instanceof Message) {
+                        handleMessageResponse(o);
                     }
-                    else if (o instanceof Message) { handleMessageResponse(o); }
                     Thread.sleep(250);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    if (e instanceof EOFException){
-                        System.out.println("end of file, going to sleep for a sec");
-                        try {Thread.sleep(1000);}
-                        catch (InterruptedException ex) {e.printStackTrace();}
-                    }
+                } catch (IOException | InterruptedException | ClassNotFoundException e) {
+                    exceptionHandler(e, Thread.currentThread());
                 }
             }
         }
@@ -190,6 +192,7 @@ public class ClientController {
      * Distinguishing two generic objects by their
      * generic parameter is simply not something you can do in Java,
      * so Receive message has to invoke this mess of a solution.
+     *
      * @param o Object read from ObjectInputStream
      */
     private synchronized void handleListResponse(Object o, ArrayList<User> list) {
@@ -197,7 +200,7 @@ public class ClientController {
         System.out.println("\nCLIENT");
         for (Object element : (List<?>) o) {
             if (element instanceof User) {
-               list.add((User)element);
+                list.add((User) element);
                 System.out.println(element.toString() + "added to list in client " + clientSocket.getLocalPort());
             }
             // here we can add functionality for other List<?> responses
@@ -214,9 +217,12 @@ public class ClientController {
     }
 
     private class SendMessage implements Runnable {
-        public SendMessage(Message message) {}
+        public SendMessage(Message message) {
+        }
+
         @Override
-        public void run() {}
+        public void run() {
+        }
     }
 
     private class ClientConnect implements Runnable {
@@ -256,17 +262,47 @@ public class ClientController {
         @Override
         public void run() {
             try {
-                clientSocket.close();
-            } catch (NullPointerException e) {
-                log.log(Level.WARNING, "socket not initialized");
-                e.printStackTrace();
 
+
+                if (is != null) {
+                    is.close();
+                }
+                if (ois != null) {
+                    ois.close();
+                }
+                if (os != null) {
+                    os.close();
+                }
+                if (oos != null) {
+                    oos.close();
+                }
+                if (clientSocket != null) {
+                    clientSocket.close();
+                }
             } catch (IOException e) {
-                log.log(Level.WARNING, " exception in closing streams");
+                System.out.println("failed to close socket");
                 e.printStackTrace();
             }
         }
     }
+
+    /**
+     * placeholder func
+     *
+     * @param e Exception to handle
+     * @param t Thread in which exception occurred
+     */
+    public void exceptionHandler(Exception e, Thread t) {
+        // javadoc says "Thrown to indicate that there is an error creating or accessing a Socket."
+        if (e instanceof SocketException) {
+            System.out.println("disconnected from server");
+        } else if (e instanceof InterruptedException) {
+            System.out.println(t.getName() + " interrupted");
+        } else if (e instanceof ClassNotFoundException){
+            System.out.println("likely failure @ReceiveMessage in ObjectInputStream.readObj()");
+        }
+    }
+
     public String getServerIP() {
         return ip;
     }
@@ -274,8 +310,9 @@ public class ClientController {
     public int getServerPort() {
         return port;
     }
+
     public int getLocalPort() {
-        if(clientSocket != null){
+        if (clientSocket != null) {
             return clientSocket.getLocalPort();
         }
         return -1;

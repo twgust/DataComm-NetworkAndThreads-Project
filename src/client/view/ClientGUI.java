@@ -26,6 +26,9 @@ public class ClientGUI implements IUserConnectionCallback {
     public void connect(String username){
         clientController.connectToServer(username);
     }
+    public void disconnect(){
+        clientController.disconnectFromServer();
+    }
 
     @Override
     public void usersUpdated(ArrayList<User> onlineUserList) {
