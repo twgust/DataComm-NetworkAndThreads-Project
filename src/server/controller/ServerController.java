@@ -2,14 +2,13 @@ package server.controller;
 
 import entity.Message;
 import entity.User;
+import entity.LoggerUtil;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,7 +50,6 @@ import java.util.logging.Logger;
 
 public class ServerController implements UserConnectionCallback {
     private final Logger log;
-
     private ServerSocket serverSocket;
     private final int port;
     private Buffer buffer;
@@ -148,11 +146,7 @@ public class ServerController implements UserConnectionCallback {
             if(onlineClients == null){
                 System.out.println("online clients is null, instantiating list");
                 onlineClients = new ArrayList<>();
-                for (User user : set) {
-                    onlineClients.add(user);
-                    System.out.println("user added to arraylist");
-                    System.out.println(onlineClients.size());
-                }
+                onlineClients.addAll(set);
                 updateAllOnlineLists(set);
             }
         }
@@ -172,17 +166,56 @@ public class ServerController implements UserConnectionCallback {
             try{
                 // For each user, acquire a reference to the socket.
                 Socket clientSocket = buffer.get(user);
-                log.log(Level.INFO, "Updating online list for "
-                        + clientSocket.getRemoteSocketAddress().toString() + "!");
+
+                // Log the event to track which clients we are updating in cli
+                log.log(Level.INFO, LoggerUtil.ANSI_PURPLE + "Updating online list for "
+                        + clientSocket.getRemoteSocketAddress().toString() + "\n" + LoggerUtil.ANSI_BLUE);
+
                 // For each user, execute the SendObject runnable,
                 // effectively updating each connected clients "currently online list"
                 threadPool.execute(new SendObject(this.onlineClients, clientSocket));
-            }catch (InterruptedException e){
+            }catch (InterruptedException e){e.printStackTrace();}
+        }
+    }
+    /**
+     * Runnable for sending a message to a Client,
+     * Writes to connected clients ObjectOutputStream
+     */
+    private class SendObject implements Runnable{
+        private ArrayList<User> userList;
+        private Message message;
+        private Socket client;
+        public SendObject(Message message, Socket client){
+            this.message = message;
+            this.client = client;
+        }
+        public SendObject(ArrayList<User> userArrayList, Socket client){
+            this.userList = userArrayList;
+            this.client = client;
+        }
+        @Override
+        public void run() {
+            try {
+                OutputStream os = client.getOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(os);
+                if(userList != null){
+                    ArrayList<User> temp = userList;
+                    oos.writeObject(temp);
+                    oos.flush();
+                }
+                else if(message != null){
+                    oos.writeObject(message);
+                    oos.flush();
+                }
+
+            } catch (IOException e) {
+                if(e instanceof SocketException){
+                    handleServerException(e, Thread.currentThread());
+                }
                 e.printStackTrace();
             }
         }
     }
-
     /**
      * Runnable for receiving a message from a client
      * Reads from connected clients ObjectInputStream.
@@ -207,45 +240,6 @@ public class ServerController implements UserConnectionCallback {
     }
 
     /**
-     * Runnable for sending a message to a Client,
-     * Writes to connected clients ObjectOutputStream
-     */
-    private class SendObject implements Runnable{
-        private ArrayList<User> userList;
-        private Message message;
-        private Socket client;
-        public SendObject(Message message, Socket client){
-         this.message = message;
-         this.client = client;
-        }
-        public SendObject(ArrayList<User> userArrayList, Socket client){
-            this.userList = userArrayList;
-            this.client = client;
-        }
-        @Override
-        public void run() {
-            try {
-
-            OutputStream os = client.getOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(os);
-            if(userList != null){
-                oos.writeObject(userList);
-                oos.flush();
-            }
-            else if(message != null){
-                oos.writeObject(message);
-                oos.flush();
-            }
-
-            } catch (IOException e) {
-                if(e instanceof SocketException){
-                    handleServerException(e, Thread.currentThread());
-                }
-                throw new RuntimeException(e);}
-        }
-    }
-
-    /**
      * Runnable for initializing the server
      */
     private class ServerConnect implements Runnable{
@@ -253,6 +247,8 @@ public class ServerController implements UserConnectionCallback {
         public void run(){
             try {
                 serverSocket = new ServerSocket(port);
+                log.log(Level.INFO,  LoggerUtil.ANSI_GREEN + " Server running...\n" + LoggerUtil.ANSI_BLUE);
+
                 // While server is running,
                 // 1 accept all incoming clients,
                 //      For each client:
@@ -264,7 +260,6 @@ public class ServerController implements UserConnectionCallback {
                 // given that User is the key
                 while(true){
                     Socket cSocket = serverSocket.accept();
-                    System.out.println("a");
                     InputStream is = cSocket.getInputStream();
                     ObjectInputStream ois = new ObjectInputStream(is);
                     User user = (User) ois.readObject();

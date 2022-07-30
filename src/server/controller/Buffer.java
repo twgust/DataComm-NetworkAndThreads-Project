@@ -1,10 +1,10 @@
 package server.controller;
 
 import entity.User;
+import entity.LoggerUtil;
 
 import java.net.Socket;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,15 +27,16 @@ public class Buffer {
 
     protected synchronized void put(User user, Socket client){
         clientBuffer.put(user,client);
-        log.log(Level.INFO, "{username='" + user.getUsername() +"'"
+        log.log(Level.INFO, LoggerUtil.ANSI_BLUE + "Client - {username='" + user.getUsername() +"'"
                 + "socket='" + client.getRemoteSocketAddress() +"'}"
-                + " connected to server");
+                + " connected to server\n" + LoggerUtil.ANSI_BLUE);
         notifyAll();
     }
 
     protected synchronized Socket get(User user) throws InterruptedException{
         while(clientBuffer.isEmpty()){
-            log.log(Level.INFO, "buffer empty, waiting for clients to be added to buffer...");
+            log.log(Level.OFF, LoggerUtil.ANSI_BLUE+"buffer empty, waiting for clients to be added to buffer...\n"
+            + LoggerUtil.ANSI_BLUE);
             wait();
         }
         return clientBuffer.get(user);
@@ -48,9 +49,7 @@ public class Buffer {
      * @return size, represents nr of clients connected.
      */
     protected synchronized int size(){
-        int clients = clientBuffer.size();
-        log.log(Level.INFO, "#" + clients + " connected to server");
-        return clients;
+        return clientBuffer.size();
     }
     protected synchronized void printAllUsers(){
         System.out.println(clientBuffer.keySet());

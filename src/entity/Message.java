@@ -31,21 +31,30 @@ public class Message {
     private User author;
     private ArrayList<User> recipientList;
 
-    public Message(String textMessage, ImageIcon imageIcon, User author, ArrayList<User> recipients){
+    public MessageType getType() {
+        return type;
+    }
+
+    private MessageType type;
+
+    public Message(String textMessage, ImageIcon imageIcon, User author, ArrayList<User> recipients, MessageType type){
         this.textMessage = textMessage;
         this.image = imageIcon;
         this.author = author;
         this.recipientList = recipients;
+        this.type = type;
     }
-    public Message(String textMessage, User author, ArrayList<User> recipients){
+    public Message(String textMessage, User author, ArrayList<User> recipients, MessageType type){
         this.textMessage = textMessage;
         this.author = author;
         this.recipientList = recipients;
+        this.type = type;
     }
-    public Message(ImageIcon imageIcon, User author, ArrayList<User> recipients){
+    public Message(ImageIcon imageIcon, User author, ArrayList<User> recipients, MessageType type){
         this.image = imageIcon;
         this.author = author;
         this.recipientList = recipients;
+        this.type = type;
     }
     public ImageIcon getImage(){
         if(this.image != null){

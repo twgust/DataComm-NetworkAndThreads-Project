@@ -5,11 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/client/controller/IUserConnectionCallback.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/entity/LoggerUtil.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/entity/MessageType.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/controller/ClientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/view/ClientGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/view/ClientGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/entity/Message.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/Message.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/controller/Buffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Buffer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/controller/ServerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/UserConnectionCallback.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/UserConnectionCallback.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/runLocalServerAndClients.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/runLocalServerAndClients.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/view/ServerGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/view/ServerGUI.java" afterDir="false" />
     </list>
@@ -21,6 +25,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Interface" />
+        <option value="Enum" />
         <option value="Class" />
       </list>
     </option>
@@ -60,7 +66,20 @@
     </key>
   </component>
   <component name="RunManager" selected="Application.server.runLocalServerAndClients">
-    <configuration name="RunClient" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+    <configuration name="MyPanel" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="client.controller.MyPanel" />
+      <module name="DataComm-NetworkAndThreads-Project" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="client.controller.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="client.RunClient" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="client.RunClient" />
       <module name="DataComm-NetworkAndThreads-Project" />
       <extension name="coverage">
@@ -106,7 +125,7 @@
       <module name="DataComm-NetworkAndThreads-Project" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="server.*" />
+          <option name="PATTERN" value="entity.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -126,15 +145,17 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Application.MyPanel" />
+      <item itemvalue="Application.client.RunClient" />
       <item itemvalue="Application.runLocalServerAndClients" />
       <item itemvalue="Application.server.runLocalServerAndClients" />
-      <item itemvalue="Application.RunClient" />
       <item itemvalue="Application.server.RunServer" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Application.server.runLocalServerAndClients" />
-        <item itemvalue="Application.RunClient" />
+        <item itemvalue="Application.client.RunClient" />
+        <item itemvalue="Application.MyPanel" />
         <item itemvalue="Application.server.RunServer" />
       </list>
     </recent_temporary>
@@ -153,6 +174,7 @@
       <workItem from="1659100798663" duration="858000" />
       <workItem from="1659101678872" duration="15962000" />
       <workItem from="1659133821283" duration="1621000" />
+      <workItem from="1659171379204" duration="12010000" />
     </task>
     <servers />
   </component>
@@ -176,6 +198,10 @@
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.io.StreamCorruptedException" package="java.io" />
           <option name="timeStamp" value="1" />
+        </breakpoint>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.lang.NullPointerException" package="java.lang" />
+          <option name="timeStamp" value="4" />
         </breakpoint>
       </breakpoints>
     </breakpoint-manager>

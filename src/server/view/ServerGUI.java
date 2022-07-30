@@ -17,9 +17,8 @@ public class ServerGUI implements UserConnectionCallback {
         setupFrame(width,height);
         this.serverController = serverController;
         serverController.addConnectionListener(this);
-
-
     }
+
     @Override
     public void onUserDisconnectListener(User user) {
 
