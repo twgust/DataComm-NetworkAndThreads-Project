@@ -67,7 +67,6 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
      */
     @Override
     public void usersUpdatedCallback(ArrayList<User> onlineUserList) {
-        System.out.println("callback interface fired, updating gui");
         SwingUtilities.invokeLater(() -> {
             textAreaChat.append(onlineUserList.size() + "\n");
         });

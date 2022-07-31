@@ -60,8 +60,6 @@ public class ServerController implements UserConnectionCallback {
     private ArrayList<UserConnectionCallback> clientConnectionListenerList;
     private ArrayList<User> onlineUserList;
 
-
-
     /**
      * Constructor
      * @param port The port on which the Server is run on.
@@ -84,6 +82,7 @@ public class ServerController implements UserConnectionCallback {
         }
         clientConnectionListenerList.add(connectionListener);
     }
+
     /**
      * Starts and initializes server,
      * invoked by ServerGUI.
@@ -108,12 +107,17 @@ public class ServerController implements UserConnectionCallback {
      * @param e the exception to be handled
      * @param thread the thread in which the Exception occurred
      */
-    private void handleServerException(IOException e, Thread thread, String clientIP){
+    private void handleServerException(IOException e,Thread thread,User user, String clientIP){
         if(clientIP.isEmpty()){
             clientIP = "unknown client";
         }
         if(e instanceof SocketException){
-            log.log(Level.INFO, LoggerUtil.ANSI_PURPLE + "\nClient: " + clientIP + " disconnected" + LoggerUtil.ANSI_BLUE);
+            // fire the onUserDisconnect event for each implementation of the interface (Server Controller,GUI)
+            for (UserConnectionCallback impl: clientConnectionListenerList) {
+                impl.onUserDisconnectListener(user);
+            }
+            log.log(Level.INFO, LoggerUtil.ANSI_PURPLE + "Client: " + clientIP + " disconnected" + LoggerUtil.ANSI_BLUE);
+
         }
         else if(e instanceof EOFException){
             log.log(Level.WARNING, e.getMessage());
@@ -128,7 +132,11 @@ public class ServerController implements UserConnectionCallback {
      */
     @Override
     public void onUserDisconnectListener(User disconnectedClient) {
-        buffer.removeUser(disconnectedClient);
+        try{
+            buffer.removeUser(disconnectedClient);
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
         onlineUserList.remove(disconnectedClient);
         Set<User> set = buffer.getKeySet();
         updateAllOnlineLists(set);
@@ -161,8 +169,7 @@ public class ServerController implements UserConnectionCallback {
         }
 
 
-    /**
-     *
+    /*
      * Invoked by one of the connection callbacks (onUserConnect/onUserDisconnect)
      * Iterates over all connected sockets, each socket is sent the updated onlineUserList
      * @param set Set of Keys to enable access operation on the Buffer HashMap (K:User, V:Socket)
@@ -172,11 +179,12 @@ public class ServerController implements UserConnectionCallback {
         for (User user: set) {
             try{
                 Socket clientSocket = buffer.get(user);
+                String clienIP = clientSocket.getRemoteSocketAddress().toString();
                 log.log(Level.INFO, LoggerUtil.ANSI_PURPLE + "Updating online list for "
                         + clientSocket.getRemoteSocketAddress().toString() + "\n" + LoggerUtil.ANSI_BLUE);
                 // For each user, execute the SendObject runnable, updating each clients OnlineList
-                threadPool.execute(new SendObject
-                        (this.onlineUserList, clientSocket, clientSocket.getRemoteSocketAddress().toString()));
+                SendObject sendObject = new SendObject(this.onlineUserList, user, clientSocket, clienIP);
+                threadPool.execute(sendObject);
             }catch (InterruptedException e){e.printStackTrace();}
         }
     }
@@ -187,18 +195,20 @@ public class ServerController implements UserConnectionCallback {
     private class SendObject implements Runnable{
         private ArrayList<User> userList;
         private Message message;
+        private User user;
         private Socket client;
         private String clientIP;
         public SendObject(Message message, Socket client){
             this.message = message;
             this.client = client;
         }
-        public SendObject(ArrayList<User> userArrayList, Socket client, String ip){
+        public SendObject(ArrayList<User> userArrayList, User user, Socket client, String ip){
             this.userList = userArrayList;
             this.client = client;
             this.clientIP = ip;
-
+            this.user = user;
         }
+
         @Override
         public void run() {
             try {
@@ -216,7 +226,7 @@ public class ServerController implements UserConnectionCallback {
 
             } catch (IOException e) {
                 if(e instanceof SocketException){
-                    handleServerException(e, Thread.currentThread(), clientIP);
+                    handleServerException(e, Thread.currentThread(),user,  clientIP);
                 }
             }
         }
@@ -270,7 +280,7 @@ public class ServerController implements UserConnectionCallback {
                     Thread.sleep(250);
                 }
             }
-            catch (IOException e) {handleServerException(e, Thread.currentThread(), "");}
+            catch (IOException e) {handleServerException(e,Thread.currentThread(),null, "");}
             catch (InterruptedException e) {e.printStackTrace();}
             catch (ClassNotFoundException e) {e.printStackTrace();}
         }

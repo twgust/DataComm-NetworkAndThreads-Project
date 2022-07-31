@@ -41,8 +41,11 @@ public class Buffer {
         }
         return clientBuffer.get(user);
     }
-    protected synchronized void removeUser(User user){
-
+    protected synchronized void removeUser(User user) throws InterruptedException{
+        while(clientBuffer.isEmpty()){
+            wait();
+        }
+        clientBuffer.remove(user);
     }
 
     /**

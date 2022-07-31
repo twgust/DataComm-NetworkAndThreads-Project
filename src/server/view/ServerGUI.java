@@ -21,7 +21,7 @@ public class ServerGUI implements UserConnectionCallback {
 
     @Override
     public void onUserDisconnectListener(User user) {
-
+        logMessageToGui(user.toString() + " disconnected from the server");
     }
 
     @Override

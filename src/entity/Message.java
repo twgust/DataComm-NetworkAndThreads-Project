@@ -28,12 +28,9 @@ import java.util.ArrayList;
 public class Message {
     private String textMessage;
     private ImageIcon image;
-    private User author;
-    private ArrayList<User> recipientList;
-
-
-
-    private MessageType type;
+    private final User author;
+    private final ArrayList<User> recipientList;
+    private final MessageType type;
 
     public Message(String textMessage, ImageIcon imageIcon, User author, ArrayList<User> recipients, MessageType type) {
         this.textMessage = textMessage;
@@ -78,6 +75,8 @@ public class Message {
     public ArrayList<User> getRecipientList() {
         return recipientList;
     }
-    public MessageType getType() {return type;}
 
+    public MessageType getType() {
+        return type;
+    }
 }
