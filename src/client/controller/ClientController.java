@@ -6,15 +6,12 @@ import entity.User;
 
 import javax.swing.*;
 import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -86,13 +83,16 @@ public class ClientController {
         userOnlineList = new ArrayList<>();
     }
 
+
     public void addCallBackListener(IUserConnectionCallback impl) {
         this.connectedUsersCallback = impl;
     }
 
+    public void loadImgFromFile(String path){
+    }
+
     /**
      * If a client hasn't been connected to the server before and has no username
-     *
      * @param username input from gui
      */
     public void registerUser(String username) {
@@ -120,7 +120,7 @@ public class ClientController {
     public void disconnectFromServer() {
         connectAndReceiveExecutor.shutdownNow();
         ExecutorService disconnectClient = Executors.newSingleThreadExecutor();
-        disconnectClient.execute(new ClientDisconnect());
+        disconnectClient.execute(new ClientDisconnect(clientSocket.getRemoteSocketAddress().toString()));
     }
 
     /**
@@ -176,13 +176,17 @@ public class ClientController {
                         handleListResponse(o, userOnlineList);
 
                         // call the interface after response has been handled
-                        connectedUsersCallback.usersUpdated(userOnlineList);
+                        connectedUsersCallback.usersUpdatedCallback(userOnlineList);
                     } else if (o instanceof Message) {
                         handleMessageResponse(o);
                     }
                     Thread.sleep(250);
-                } catch (IOException | InterruptedException | ClassNotFoundException e) {
-                    exceptionHandler(e, Thread.currentThread());
+                } catch (IOException e){
+                    exceptionHandler(e, Thread.currentThread(), "");
+                } catch (InterruptedException e){
+                    exceptionHandler(e, Thread.currentThread(), " Thread interrupted");
+                } catch (ClassNotFoundException e){
+                    exceptionHandler(e, Thread.currentThread(), " error reading from server");
                 }
             }
         }
@@ -243,7 +247,6 @@ public class ClientController {
         public void run() {
             try {
                 assert user != null;
-
                 InetAddress address = InetAddress.getByName(ip);
                 clientSocket = new Socket(address, port);
                 os = clientSocket.getOutputStream();
@@ -251,6 +254,9 @@ public class ClientController {
                 oos.writeObject(user);
                 os.flush();
                 oos.flush();
+
+                // notify gui that connection is established
+                connectedUsersCallback.connectionOpenedCallback("Success established connection to: " + clientSocket.getInetAddress().toString());
                 // end of runnable
             } catch (IOException e) {
                 e.printStackTrace();
@@ -259,11 +265,12 @@ public class ClientController {
     }
 
     private class ClientDisconnect implements Runnable {
+        public ClientDisconnect(String client){
+
+        }
         @Override
         public void run() {
             try {
-
-
                 if (is != null) {
                     is.close();
                 }
@@ -278,6 +285,7 @@ public class ClientController {
                 }
                 if (clientSocket != null) {
                     clientSocket.close();
+                    connectedUsersCallback.connectionClosedCallback("You've been disconnected");
                 }
             } catch (IOException e) {
                 System.out.println("failed to close socket");
@@ -292,14 +300,28 @@ public class ClientController {
      * @param e Exception to handle
      * @param t Thread in which exception occurred
      */
-    public void exceptionHandler(Exception e, Thread t) {
+    public void exceptionHandler(Exception e, Thread t, String messageToGUI) {
         // javadoc says "Thrown to indicate that there is an error creating or accessing a Socket."
         if (e instanceof SocketException) {
-            System.out.println("disconnected from server");
-        } else if (e instanceof InterruptedException) {
-            System.out.println(t.getName() + " interrupted");
-        } else if (e instanceof ClassNotFoundException){
-            System.out.println("likely failure @ReceiveMessage in ObjectInputStream.readObj()");
+            if(e instanceof ConnectException){
+                connectedUsersCallback.exceptionCallback(e, "attempt to establish connection to server failed");
+            }
+            else if (e instanceof BindException){
+                connectedUsersCallback.exceptionCallback(e, " port likely in use");
+            }
+            else if(e instanceof NoRouteToHostException){
+                connectedUsersCallback.exceptionCallback(e, " check firewall permissions");
+            }
+        }
+
+        else if (e instanceof InterruptedException) {
+            // this is expected, some threads need to be killed and will be interrupted
+            // no need to notify user
+            System.out.println(t.getName() + messageToGUI);
+        }
+
+        else if (e instanceof ClassNotFoundException){
+            System.out.println(t.getName() + messageToGUI);
         }
     }
 

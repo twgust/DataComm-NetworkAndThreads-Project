@@ -113,7 +113,7 @@ public class ServerController implements UserConnectionCallback {
             clientIP = "unknown client";
         }
         if(e instanceof SocketException){
-            log.log(Level.SEVERE, LoggerUtil.ANSI_PURPLE + "\nClient: " + clientIP + " disconnected" + LoggerUtil.ANSI_BLUE);
+            log.log(Level.INFO, LoggerUtil.ANSI_PURPLE + "\nClient: " + clientIP + " disconnected" + LoggerUtil.ANSI_BLUE);
         }
         else if(e instanceof EOFException){
             log.log(Level.WARNING, e.getMessage());

@@ -9,6 +9,7 @@ import java.awt.*;
 import java.util.ArrayList;
 
 public class ClientGUI implements IUserConnectionCallback {
+    // Swing components
     private JFrame frame;
     private JList jlistOnline;
     private JTextArea textAreaChat;
@@ -23,27 +24,68 @@ public class ClientGUI implements IUserConnectionCallback {
         this.clientController.addCallBackListener(this);
         setupPanel();
     }
-    public void connect(String username){
+
+    /**
+     * Attempts to connect the user to the server
+     * @param username desired username
+     */
+    public void connect(String username, ImageIcon icon){
         clientController.connectToServer(username);
     }
+
+    /**
+     * Attempts to disconnect the client from the server
+     */
     public void disconnect(){
         clientController.disconnectFromServer();
     }
 
+    /**
+     * Fires after a successful attempt to connect the client to the server
+     * @param connected info passed from controller
+     */
     @Override
-    public void usersUpdated(ArrayList<User> onlineUserList) {
-        // System.out.println("time to update gui, client:" + clientController.toString());
-        // System.out.println(onlineUserList.size());
-        System.out.println("callback interface fired, updating gui");
-        SwingUtilities.invokeLater(() -> {
-            textAreaChat.append(onlineUserList.size() + "\n");
-        });
+    public void connectionOpenedCallback(String connected) {
 
     }
 
     /**
-     * Server and Client can be considered separate projects,
-     * suggestions from IDE regarding duplicate code can be ignored.
+     * fires after a successful attempt to disconnect the client from the server
+     * @param disconnected info passed from controller
+     */
+    @Override
+    public void connectionClosedCallback(String disconnected) {
+
+    }
+
+    /**
+     * fires after a user has connected or disconnected
+     * @param onlineUserList updated list of currently online users
+     */
+    @Override
+    public void usersUpdatedCallback(ArrayList<User> onlineUserList) {
+        System.out.println("callback interface fired, updating gui");
+        SwingUtilities.invokeLater(() -> {
+            textAreaChat.append(onlineUserList.size() + "\n");
+        });
+    }
+
+    /**
+     * OPTIONAL
+     * fires after on exception in client controller
+     * optional displaying of error message to user
+     * @param e the exception which occurred
+     * @param errorMessage error message for client
+     */
+    @Override
+    public void exceptionCallback(Exception e, String errorMessage) {
+        System.out.println(e.getMessage());
+    }
+
+
+
+    /**
+     * Mock gui for testing
      */
     private void setupFrame(JPanel panel) {
         frame = new JFrame("chat client");

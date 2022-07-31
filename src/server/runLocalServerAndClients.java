@@ -4,6 +4,8 @@ import client.view.ClientGUI;
 import server.controller.ServerController;
 import server.view.ServerGUI;
 
+import javax.swing.*;
+
 public class runLocalServerAndClients {
     public static void main(String[] args) {
         ServerController serverController = new ServerController(9301);
@@ -21,17 +23,19 @@ public class runLocalServerAndClients {
         System.out.println("MAIN - Starting clients");
         // distinguish between local clients by port number, not remote address
         // gui starts connection to server because a user will click connect
+        ImageIcon icon = null;
+
         ClientController clientController1 = new ClientController("127.0.0.1", 9301);
         ClientGUI gui1 = new ClientGUI(clientController1);
-        gui1.connect("userOne");
+        gui1.connect("userOne", icon);
 
         ClientController clientController2 = new ClientController("127.0.0.1", 9301);
         ClientGUI gui2 = new ClientGUI(clientController2);
-        gui2.connect("userTwo");
+        gui2.connect("userTwo", icon);
 
         ClientController clientController3 = new ClientController("127.0.0.1", 9301);
         ClientGUI gui3 = new ClientGUI(clientController3);
-        gui3.connect("userThree");
+        gui3.connect("userThree", icon);
 
         // some more sleeping to simulate real behavior
         try{
@@ -43,7 +47,7 @@ public class runLocalServerAndClients {
         gui1.disconnect();
         ClientController clientController4 = new ClientController("127.0.0.1", 9301);
         ClientGUI gui4 = new ClientGUI(clientController4);
-        gui4.connect("newUser4");
+        gui4.connect("newUser4", icon);
 
     }
 }
