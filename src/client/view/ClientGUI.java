@@ -1,14 +1,16 @@
 package client.view;
 
 import client.controller.ClientController;
-import client.controller.IUserConnectionCallback;
+import client.controller.IConnectionHandler;
+import client.controller.IMessageReceivedHandler;
+import entity.Message;
 import entity.User;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
-public class ClientGUI implements IUserConnectionCallback {
+public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
     // Swing components
     private JFrame frame;
     private JList jlistOnline;
@@ -17,11 +19,12 @@ public class ClientGUI implements IUserConnectionCallback {
     private JButton sendButton;
 
     // to update gui
-    private ClientController clientController;
+    private final ClientController clientController;
 
     public ClientGUI(ClientController clientController) {
         this.clientController = clientController;
-        this.clientController.addCallBackListener(this);
+        this.clientController.addConnectionHandler(this);
+        this.clientController.addMessageReceivedHandler(this);
         setupPanel();
     }
 
@@ -71,6 +74,28 @@ public class ClientGUI implements IUserConnectionCallback {
     }
 
     /**
+     * @param message fires when message.getType() returns TEXT
+     */
+    @Override
+    public void textMessageReceived(Message message) {
+
+    }
+    /**
+     * @param message fires when message.getType() returns Image
+     */
+    @Override
+    public void imageMessageReceived(Message message) {
+
+    }
+    /**
+     * @param message fires when message.getType() returns TEXT_IMAGE
+     */
+    @Override
+    public void txtAndImgMessageReceived(Message message) {
+
+    }
+
+    /**
      * OPTIONAL
      * fires after on exception in client controller
      * optional displaying of error message to user
@@ -81,9 +106,6 @@ public class ClientGUI implements IUserConnectionCallback {
     public void exceptionCallback(Exception e, String errorMessage) {
         System.out.println(e.getMessage());
     }
-
-
-
     /**
      * Mock gui for testing
      */
@@ -122,6 +144,4 @@ public class ClientGUI implements IUserConnectionCallback {
             setupFrame(panel);
         });
     }
-
-
 }

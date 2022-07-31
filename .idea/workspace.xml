@@ -5,11 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/client/controller/IMessageReceivedHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/controller/ClientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/controller/IUserConnectionCallback.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/IUserConnectionCallback.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/controller/IUserConnectionCallback.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/IConnectionHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/view/ClientGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/view/ClientGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/runLocalServerAndClients.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/runLocalServerAndClients.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/entity/Message.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/Message.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,9 +20,9 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Interface" />
         <option value="Enum" />
         <option value="Class" />
+        <option value="Interface" />
       </list>
     </option>
   </component>
@@ -140,7 +141,7 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Application.MyPanel" />
+      <item itemvalue="Application.client.controller.MyPanel" />
       <item itemvalue="Application.client.RunClient" />
       <item itemvalue="Application.runLocalServerAndClients" />
       <item itemvalue="Application.server.runLocalServerAndClients" />
@@ -150,7 +151,7 @@
       <list>
         <item itemvalue="Application.server.runLocalServerAndClients" />
         <item itemvalue="Application.client.RunClient" />
-        <item itemvalue="Application.MyPanel" />
+        <item itemvalue="Application.client.controller.MyPanel" />
         <item itemvalue="Application.server.RunServer" />
       </list>
     </recent_temporary>
@@ -170,7 +171,7 @@
       <workItem from="1659101678872" duration="15962000" />
       <workItem from="1659133821283" duration="1621000" />
       <workItem from="1659171379204" duration="20154000" />
-      <workItem from="1659255060106" duration="2419000" />
+      <workItem from="1659255060106" duration="3752000" />
     </task>
     <servers />
   </component>

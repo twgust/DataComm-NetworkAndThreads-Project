@@ -47,7 +47,9 @@ public class ClientController {
     private Logger log;
 
     // A list containing all currently online users
-    private IUserConnectionCallback connectedUsersCallback;
+    private IConnectionHandler connectionHandler;
+    private IMessageReceivedHandler msgReceivedHandler;
+
     private ArrayList<User> userOnlineList;
 
     // A list of the clients Contacts, each contact is a user object.
@@ -83,9 +85,17 @@ public class ClientController {
         userOnlineList = new ArrayList<>();
     }
 
-
-    public void addCallBackListener(IUserConnectionCallback impl) {
-        this.connectedUsersCallback = impl;
+    /**
+     * @param impl of interface from ClientGUI
+     */
+    public void addConnectionHandler(IConnectionHandler impl) {
+        this.connectionHandler = impl;
+    }
+    /**
+     * @param impl of interface from ClientGUI
+     */
+    public void addMessageReceivedHandler(IMessageReceivedHandler impl){
+        this.msgReceivedHandler = impl;
     }
 
     public void loadImgFromFile(String path){
@@ -163,6 +173,7 @@ public class ClientController {
      * Just parse response by checking type
      * then switch statement for different types.
      */
+
     private class ReceiveMessage implements Runnable {
         @Override
         public void run() {
@@ -176,7 +187,7 @@ public class ClientController {
                         handleListResponse(o, userOnlineList);
 
                         // call the interface after response has been handled
-                        connectedUsersCallback.usersUpdatedCallback(userOnlineList);
+                        connectionHandler.usersUpdatedCallback(userOnlineList);
                     } else if (o instanceof Message) {
                         handleMessageResponse(o);
                     }
@@ -211,12 +222,16 @@ public class ClientController {
         }
     }
 
+    /**
+     * @param o takes in a message object from OOS,
+     * fires the implementation which corresponds to the type of (Message) Object o.
+     */
     private synchronized void handleMessageResponse(Object o) {
         Message message = (Message) o;
         switch (message.getType()) {
-            case TEXT -> System.out.println("type: text");
-            case IMAGE -> System.out.println("type: image");
-            case TEXT_IMAGE -> System.out.println("type: textimage");
+            case TEXT -> msgReceivedHandler.textMessageReceived(message);
+            case IMAGE -> msgReceivedHandler.imageMessageReceived(message);
+            case TEXT_IMAGE -> msgReceivedHandler.txtAndImgMessageReceived(message);
         }
     }
 
@@ -256,7 +271,7 @@ public class ClientController {
                 oos.flush();
 
                 // notify gui that connection is established
-                connectedUsersCallback.connectionOpenedCallback("Success established connection to: " + clientSocket.getInetAddress().toString());
+                connectionHandler.connectionOpenedCallback("Success established connection to: " + clientSocket.getInetAddress().toString());
                 // end of runnable
             } catch (IOException e) {
                 e.printStackTrace();
@@ -285,7 +300,7 @@ public class ClientController {
                 }
                 if (clientSocket != null) {
                     clientSocket.close();
-                    connectedUsersCallback.connectionClosedCallback("You've been disconnected");
+                    connectionHandler.connectionClosedCallback("You've been disconnected");
                 }
             } catch (IOException e) {
                 System.out.println("failed to close socket");
@@ -304,13 +319,13 @@ public class ClientController {
         // javadoc says "Thrown to indicate that there is an error creating or accessing a Socket."
         if (e instanceof SocketException) {
             if(e instanceof ConnectException){
-                connectedUsersCallback.exceptionCallback(e, "attempt to establish connection to server failed");
+                connectionHandler.exceptionCallback(e, "attempt to establish connection to server failed");
             }
             else if (e instanceof BindException){
-                connectedUsersCallback.exceptionCallback(e, " port likely in use");
+                connectionHandler.exceptionCallback(e, " port likely in use");
             }
             else if(e instanceof NoRouteToHostException){
-                connectedUsersCallback.exceptionCallback(e, " check firewall permissions");
+                connectionHandler.exceptionCallback(e, " check firewall permissions");
             }
         }
 
