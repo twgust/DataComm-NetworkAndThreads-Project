@@ -40,6 +40,13 @@ public class Message {
         this.type = type;
     }
 
+    /**
+     *
+     * @param textMessage
+     * @param author
+     * @param recipients
+     * @param type
+     */
     public Message(String textMessage, User author, ArrayList<User> recipients, MessageType type) {
         this.textMessage = textMessage;
         this.author = author;
@@ -47,6 +54,13 @@ public class Message {
         this.type = type;
     }
 
+    /**
+     *
+     * @param imageIcon
+     * @param author
+     * @param recipients
+     * @param type
+     */
     public Message(ImageIcon imageIcon, User author, ArrayList<User> recipients, MessageType type) {
         this.image = imageIcon;
         this.author = author;
@@ -54,6 +68,10 @@ public class Message {
         this.type = type;
     }
 
+    /**
+     *
+     * @return
+     */
     public ImageIcon getImage() {
         if (this.image != null) {
             return this.image;
@@ -61,6 +79,10 @@ public class Message {
         return null;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getTextMessage() {
         if (this.textMessage != null) {
             return textMessage;
@@ -68,14 +90,26 @@ public class Message {
         return "bad";
     }
 
+    /**
+     *
+     * @return
+     */
     public User getAuthor() {
         return author;
     }
 
+    /**
+     *
+     * @return
+     */
     public ArrayList<User> getRecipientList() {
         return recipientList;
     }
 
+    /**
+     *
+     * @return
+     */
     public MessageType getType() {
         return type;
     }

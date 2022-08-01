@@ -1,6 +1,7 @@
 package entity;
 
 
+import javax.swing.*;
 import java.io.Serializable;
 
 /**
@@ -11,26 +12,60 @@ import java.io.Serializable;
  *
  */
 public class User implements Serializable {
-    private String username;
-    //private ImageIcon image;
-    /*
-    public User(String username, ImageIcon image){
-        this.username = username;
-        this.image = image;
-    }
+    private final String username;
+    private byte[] avatarBuffer;
+    private transient ImageIcon avatar;
 
+    /**
+     * TODO, not fully implemented
+     * @param userName string
+     * @param avatar ImageIcon
      */
-    public User(String userName){
+    public User(String userName, ImageIcon avatar){
         this.username = userName;
+        this.avatar = avatar;
     }
 
+    /**
+     * This is the constructor currently in use,
+     * ++ ease of use with ObjectInputStream.
+     * @param userName username
+     * @param img array of bytes representing an image
+     */
+    public User(String userName, byte[] img){
+        this.username = userName;
+        this.avatarBuffer = img;
+    }
+
+    /**
+     * @return username
+     */
     public String getUsername() {
         return username;
     }
-    /*
-    public ImageIcon getImage() {
-        return image;
+
+    /**
+     * TODO, not implemented
+     * @return ImageIcon (user avatar)
+     */
+    public ImageIcon getAvatar() {
+        return avatar;
     }
+
+    /**
+     * @return buffer of bytes representing a jpg.
+     */
+    public byte[] getAvatarAsByteBuffer() {
+        return avatarBuffer;
+    }
+
+    /**
+     * Overridden equals function:
+     *            User user1 = new User("name1","img1"),
+     *            User user2 = new User("name1", "img2")
+     *            user1.equals(user2) returns true
+     * @param o object to compare
+     * @return result of comparison True/False
      */
     @Override
     public boolean equals(Object o){
@@ -52,6 +87,10 @@ public class User implements Serializable {
 
         return true;
     }
+
+    /**
+     * @return hashCode for given user.
+     */
     @Override
     public int hashCode()
     {
@@ -59,6 +98,11 @@ public class User implements Serializable {
         result = 31 * result;
         return result;
     }
+
+    /**
+     * TODO finalize
+     * @return String representation of a User instance
+     */
     @Override
     public String toString() {
         return "{" + "name='" + username + "'}";

@@ -20,11 +20,19 @@ public class Buffer {
     private final HashMap<User, Socket> clientBuffer;
     private final Logger log;
 
+    /**
+     * TODO
+     */
     public Buffer(){
         clientBuffer = new HashMap<>();
         log = Logger.getLogger("Buffer");
     }
 
+    /**
+     * TODO
+     * @param user K
+     * @param client V
+     */
     protected synchronized void put(User user, Socket client){
         clientBuffer.put(user,client);
         log.log(Level.INFO, LoggerUtil.ANSI_BLUE + "Client - {username='" + user.getUsername() +"'"
@@ -33,6 +41,12 @@ public class Buffer {
         notifyAll();
     }
 
+    /**
+     * TODO
+     * @param user key to fetch
+     * @return returns value for K: user
+     * @throws InterruptedException
+     */
     protected synchronized Socket get(User user) throws InterruptedException{
         while(clientBuffer.isEmpty()){
             log.log(Level.OFF, LoggerUtil.ANSI_BLUE+"buffer empty, waiting for clients to be added to buffer...\n"
@@ -41,12 +55,27 @@ public class Buffer {
         }
         return clientBuffer.get(user);
     }
+
+    /**
+     *
+     * @param user user to be removed, invoked on disconnect
+     * @throws InterruptedException
+     */
     protected synchronized void removeUser(User user) throws InterruptedException{
         while(clientBuffer.isEmpty()){
             wait();
         }
         clientBuffer.remove(user);
     }
+
+    /**
+     * @param user the user to look up.
+     * @return true if user contains buffer
+     */
+    protected synchronized boolean hasUser(User user){
+        return clientBuffer.containsKey(user);
+    }
+
 
     /**
      * @return size, represents nr of clients connected.

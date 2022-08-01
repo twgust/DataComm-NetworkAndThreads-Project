@@ -4,10 +4,14 @@ import entity.Message;
 import entity.MessageType;
 import entity.User;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,7 +34,7 @@ import java.util.logging.Logger;
  * 3, Send messages to User(s) - through Server: []
  * 4, Receive messages from User(s) - through Server: []
  * <p>
- * 5, Display connected User(s): []
+ * 5, Display connected User(s): [X]
  * 6, Add connected users to a Contact list: []
  * 7, Save contact list on local storage ON client disconnect and exit:  []
  * 8, Load contact list from local storage On client connect and startup: []
@@ -43,18 +47,22 @@ import java.util.logging.Logger;
  */
 
 // worth considering that 2N threads will occupy N cores.
+
+/**
+ *
+ */
 public class ClientController {
     private Logger log;
 
-    // A list containing all currently online users
     private IConnectionHandler connectionHandler;
     private IMessageReceivedHandler msgReceivedHandler;
 
+    // A list containing all currently online users
     private ArrayList<User> userOnlineList;
 
-    // A list of the clients Contacts, each contact is a user object.
+    // TODO undecided on solution and data struct A Set of the clients Contacts, E = user
     // Loaded from local storage on startup, Saved and updated to local storage on exit
-    private ArrayList<User> userContactList;
+    private HashSet<User> userContactList;
 
     private Socket clientSocket;
 
@@ -64,7 +72,6 @@ public class ClientController {
 
     private InputStream is;
     private ObjectInputStream ois;
-
     private OutputStream os;
     private ObjectOutputStream oos;
 
@@ -75,14 +82,21 @@ public class ClientController {
     private SendMessage sendMessage;
     private User user;
 
+    /**
+     *
+     * @param ip ip or server
+     * @param port port of server
+     */
     public ClientController(String ip, int port) {
         log = Logger.getLogger("client");
         this.port = port;
         this.ip = ip;
 
+        // since connection is only done once, we might as well reuse that single Thread.
         connectAndReceiveExecutor = Executors.newSingleThreadExecutor();
         sendMessageExecutor = Executors.newSingleThreadExecutor();
         userOnlineList = new ArrayList<>();
+        userContactList = new HashSet<>();
     }
 
     /**
@@ -98,11 +112,16 @@ public class ClientController {
         this.msgReceivedHandler = impl;
     }
 
-    public void loadImgFromFile(String path){
+    /**
+     * Loads image from path
+     * @param path path of file
+     */
+    public  ImageIcon loadImgFromPath(String path){
+        return new ImageIcon("path");
     }
 
     /**
-     * If a client hasn't been connected to the server before and has no username
+     * TODO, the idea is that we want to be able to distinguish between already registered users and new users
      * @param username input from gui
      */
     public void registerUser(String username) {
@@ -110,30 +129,50 @@ public class ClientController {
     }
 
     /**
-     * TODO add image icon as second input parameter
-     *
-     * @param username user
+     * TODO - WIP: undecided on data struct
+     * @param user
      */
-    public void connectToServer(String username) {
+    public String addContact(User user){
+        if(userContactList.contains(user)){
+            return user.getUsername() + " already in contact list";
+        }
+        else{
+            // add contact to list
+        }
+        return "operation failed";
+    }
+    /**
+     * Attempts to establish a connection and register a user to the server.
+     * @param username user
+     * @param path path of image to be sent to server
+     */
+    public void connectToServer(String username, String path) {
         // empty as of now
-        ImageIcon icon = new ImageIcon();
-        ClientConnect connect = new ClientConnect(username, icon);
+        ClientConnect connect = new ClientConnect(username, path);
         Future<?> connectTask = connectAndReceiveExecutor.submit(connect);
         while (true) {
+            // important: returns true even if an exception was encountered,
+            // connectTask.get() returns null if completed successfully
             if (connectTask.isDone()) {
+
                 break;
             }
         }
         connectAndReceiveExecutor.execute(new ReceiveMessage());
     }
 
+    /**
+     * disconnects the user and closes the socket, invoked by gui.
+     */
     public void disconnectFromServer() {
+        System.out.println("disconnect");
         connectAndReceiveExecutor.shutdownNow();
         ExecutorService disconnectClient = Executors.newSingleThreadExecutor();
         disconnectClient.execute(new ClientDisconnect(clientSocket.getRemoteSocketAddress().toString()));
     }
 
     /**
+     * TODO - WIP
      * method overloading for send chat msg functions,
      * since a Message can contain: Text OR Image OR Text AND Image
      *
@@ -153,10 +192,18 @@ public class ClientController {
         }
     }
 
+    /**
+     * TODO
+     * @param message chat message only containing text
+     */
     public void sendChatMsg(String message) {
 
     }
 
+    /**
+     * TODO
+     * @param icon chat message only containing an image
+     */
     public void sendChatMsg(ImageIcon icon) {
 
     }
@@ -183,14 +230,15 @@ public class ClientController {
                     is = clientSocket.getInputStream();
                     ois = new ObjectInputStream(is);
                     Object o = ois.readObject();
+
                     if (o instanceof List<?>) {
                         handleListResponse(o, userOnlineList);
-
                         // call the interface after response has been handled
                         connectionHandler.usersUpdatedCallback(userOnlineList);
                     } else if (o instanceof Message) {
                         handleMessageResponse(o);
                     }
+
                     Thread.sleep(250);
                 } catch (IOException e){
                     exceptionHandler(e, Thread.currentThread(), "");
@@ -211,7 +259,7 @@ public class ClientController {
      * @param o Object read from ObjectInputStream
      */
     private synchronized void handleListResponse(Object o, ArrayList<User> list) {
-        list.clear();
+        list.clear(); // to avoid {user1}, {user1, user1, user2}
         System.out.println("\nCLIENT");
         for (Object element : (List<?>) o) {
             if (element instanceof User) {
@@ -235,8 +283,17 @@ public class ClientController {
         }
     }
 
+    /**
+     *
+     */
     private class SendMessage implements Runnable {
         public SendMessage(Message message) {
+            try{
+                oos.writeObject(message);
+                oos.flush();
+            } catch (IOException e) {
+                exceptionHandler(e, Thread.currentThread(), " failed to send message" );
+            }
         }
 
         @Override
@@ -244,41 +301,51 @@ public class ClientController {
         }
     }
 
+    /**
+     *
+     */
     private class ClientConnect implements Runnable {
-        /**
-         * Default constructor used for unregistered clients
-         */
-        private String username;
-        private ImageIcon icon;
+        private final String username;
+        private final String path;
 
-        public ClientConnect(String username, ImageIcon icon) {
+        public ClientConnect(String username, String imgPath) {
             this.username = username;
-            this.icon = icon;
-            //TODO implement new User(String username, ImageIcon)
-            user = new User(username);
+            this.path = imgPath;
         }
 
         @Override
         public void run() {
             try {
-                assert user != null;
+                // path --> bufferedImg --> bytearr
+
+                BufferedImage bufferedImage = ImageIO.read(new File(path));
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(bufferedImage, "jpg", baos);
+                baos.flush();
+                byte[] imageInByteArr = baos.toByteArray();
+                baos.close();
+
+                user = new User(username,imageInByteArr);
                 InetAddress address = InetAddress.getByName(ip);
                 clientSocket = new Socket(address, port);
                 os = clientSocket.getOutputStream();
-                oos = new ObjectOutputStream(os);
+                //BufferedOutputStream bos = new BufferedOutputStream(os);
+                ObjectOutputStream oos = new ObjectOutputStream(os);
                 oos.writeObject(user);
-                os.flush();
                 oos.flush();
 
                 // notify gui that connection is established
-                connectionHandler.connectionOpenedCallback("Success established connection to: " + clientSocket.getInetAddress().toString());
+                connectionHandler.connectionOpenedCallback("Success established connection to: " + clientSocket.getInetAddress().toString(), user);
                 // end of runnable
             } catch (IOException e) {
-                e.printStackTrace();
+                exceptionHandler(e, Thread.currentThread(), "failed to connect");
             }
         }
     }
 
+    /**
+     *
+     */
     private class ClientDisconnect implements Runnable {
         public ClientDisconnect(String client){
 
@@ -319,13 +386,13 @@ public class ClientController {
         // javadoc says "Thrown to indicate that there is an error creating or accessing a Socket."
         if (e instanceof SocketException) {
             if(e instanceof ConnectException){
-                connectionHandler.exceptionCallback(e, "attempt to establish connection to server failed");
+                connectionHandler.exceptionCallback(e, messageToGUI);
             }
             else if (e instanceof BindException){
-                connectionHandler.exceptionCallback(e, " port likely in use");
+                connectionHandler.exceptionCallback(e, "port likely in use");
             }
             else if(e instanceof NoRouteToHostException){
-                connectionHandler.exceptionCallback(e, " check firewall permissions");
+                connectionHandler.exceptionCallback(e, "check firewall permissions");
             }
         }
 
@@ -338,6 +405,9 @@ public class ClientController {
         else if (e instanceof ClassNotFoundException){
             System.out.println(t.getName() + messageToGUI);
         }
+    }
+    public User getUser() {
+        return user;
     }
 
     public String getServerIP() {
