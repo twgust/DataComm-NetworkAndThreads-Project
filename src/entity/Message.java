@@ -2,6 +2,7 @@ package entity;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
@@ -25,7 +26,7 @@ import java.util.ArrayList;
  * TimeDate when Message was received by server (this is handled by server)
  * TimeDate when Message was received by client (see above)
  */
-public class Message {
+public class Message implements Serializable {
     private String textMessage;
     private ImageIcon image;
     private final User author;
