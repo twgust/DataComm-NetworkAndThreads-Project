@@ -4,11 +4,14 @@ import client.controller.ClientController;
 import client.controller.IConnectionHandler;
 import client.controller.IMessageReceivedHandler;
 import entity.Message;
+import entity.MessageType;
 import entity.User;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  *
@@ -43,7 +46,6 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
      */
     public void connect(String username, String path){
         clientController.connectToServer(username, path);
-
     }
 
     /**
@@ -55,23 +57,31 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
     }
 
     /**
+     * WIP
+     * @param message string fetched from textfield
+     * @param msgType hardcoded for testing, solving in gui later
+     */
+    public void sendMessage(String message, MessageType msgType){
+        // recipients of message, selected by user in gui
+
+        //test case, send to all connected clients
+        ArrayList<User> userArrayList = new ArrayList<>();
+        Object[] objects = listModel.toArray();
+        // the type of message, also selected in gui
+        MessageType type = msgType;
+        switch (type){
+            case TEXT -> clientController.sendChatMsg(message, objects,  msgType);
+        }
+
+        }
+
+
+
+    /**
      *
      */
     private void loadImg(){
         clientController.loadImgFromPath("/images/circle_of_fifths.jpg");
-    }
-
-    /**
-     *
-     * @param onlineUserList
-     */
-    private void updateJLIST(ArrayList<User> onlineUserList){
-        SwingUtilities.invokeLater(() -> {
-            User me = clientController.getUser();
-            for (User u:onlineUserList) {
-
-            }
-        });
     }
 
     /**
@@ -91,7 +101,6 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
      * @param disconnected info passed from controller
      */
     @Override
-
     public void connectionClosedCallback(String disconnected) {
         SwingUtilities.invokeLater(()->{
             textAreaChat.setText("");
@@ -102,32 +111,41 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
 
     /**
      * fires after a user has connected or disconnected
-     * @param onlineUserList updated list of currently online users
+     * @param set  updated list of currently online users
      */
     @Override
-    public void usersUpdatedCallback(ArrayList<User> onlineUserList) {
-        updateJLIST(onlineUserList);
+    public void usersUpdatedCallback(HashSet<User> set) {
+        SwingUtilities.invokeLater(()->{
+            set.parallelStream().forEach(user -> {
+                if(!listModel.contains(user)){
+                    listModel.addElement(user);
+                }
+            });
+        });
+
     }
 
     /**
      * @param message fires when message.getType() returns TEXT
      */
     @Override
-    public void textMessageReceived(Message message) {
-
+    public void textMessageReceived(Message message, LocalTime timeNow) {
+        SwingUtilities.invokeLater(()->{
+            textAreaChat.append(message.getAuthor().toString() + ": " + message.getTextMessage());
+        });
     }
     /**
      * @param message fires when message.getType() returns Image
      */
     @Override
-    public void imageMessageReceived(Message message) {
+    public void imageMessageReceived(Message message, LocalTime timeNow) {
 
     }
     /**
      * @param message fires when message.getType() returns TEXT_IMAGE
      */
     @Override
-    public void txtAndImgMessageReceived(Message message) {
+    public void txtAndImgMessageReceived(Message message, LocalTime timeNow) {
 
     }
 

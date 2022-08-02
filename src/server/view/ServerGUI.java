@@ -8,6 +8,7 @@ import server.controller.UserConnectionCallback;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
+import java.time.LocalTime;
 import java.util.logging.Level;
 
 public class ServerGUI implements LoggerCallBack {
@@ -48,7 +49,7 @@ public class ServerGUI implements LoggerCallBack {
      */
     private void setupFrame(int width, int height) throws BadLocationException {
         frame = new JFrame();
-        int minWidth = 500;
+        int minWidth = 850;
         int minHeight = 500;
         if(width < minWidth){
             width = minWidth;
@@ -58,53 +59,61 @@ public class ServerGUI implements LoggerCallBack {
         }
         //Todo impl
         Container container = frame.getContentPane();
+        JPanel panel = new JPanel();
+
         textPane = new JTextPane();
 
-        textPane.setBackground(Color.black);
+        textPane.setBackground(Color.BLACK);
         set = new SimpleAttributeSet();
+
         StyleConstants.setItalic(set, true);
         textPane.setCharacterAttributes(set, true);
 
         Font font = new Font("Verdana", Font.BOLD, 12);
-        textPane.setFont(font);
-
         doc = (StyledDocument) textPane.getDocument();
         style = doc.addStyle("StyleName", null);
         StyleConstants.setForeground(style, Color.CYAN);
         StyleConstants.setBold(style, true);
-        scrollPane = new JScrollPane(textPane);
+
+        textPane.setBorder(BorderFactory.createTitledBorder("hello"));
+        frame.add(new JScrollPane(textPane));
 
 
-    //    textArea = new JTextArea();
-        frame.setSize(new Dimension(width,height));
+
+        //    textArea = new JTextArea();
+        frame.setLocation(750,400);
+        frame.setSize(800, 400);
         frame.setResizable(false);
         frame.setVisible(true);
        // frame.add(textArea);
-        frame.add(textPane);
     }
 
     /**
      * Callback interface
      * fires when controller invokes this implementation of logInfoToGui
      * @param level Logger.Level type of event (WARN,INFO etc)
-     * @param color To be implemented
-     * @param info
+     * @param info string to be logged
      */
     @Override
-    public void logInfoToGui(Level level, String color, String info) {
+    public void logInfoToGui(Level level, String info, LocalTime time) {
             SwingUtilities.invokeLater(()-> {
+                StringBuilder builder = new StringBuilder();
                 if (level.equals(Level.WARNING)) {
                     // change style
                 }
                 else {
                     try {
-                        doc.insertString(doc.getLength(), level.getName() + ": " + info + "\n\n", style);
+                        //String str = ("SERVER: [" + time.getHour() + time.getMinute() + time.getSecond() + " <" + level.getName() +"> " + info)
+                        builder.append("SERVER: [").append(time.getHour()).append(':')
+                                .append(time.getMinute()).append(':')
+                                .append(time.getSecond()).append(']')
+                                .append('<').append(level.getName()).append('>')
+                                .append(info).append("\n\n");
+                        doc.insertString(doc.getLength(), builder.toString(), style);
                     } catch (BadLocationException e) {
                         e.printStackTrace();
                     }
                 }
             });
-
-
     }
 }

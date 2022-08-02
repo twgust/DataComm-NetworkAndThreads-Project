@@ -3,16 +3,18 @@ package client.controller;
 import entity.Message;
 import entity.MessageType;
 import entity.User;
+import entity.UserSet;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -62,6 +64,7 @@ public class ClientController {
 
     // TODO undecided on solution and data struct A Set of the clients Contacts, E = user
     // Loaded from local storage on startup, Saved and updated to local storage on exit
+    private HashSet<User> onlineUserHashSet;
     private HashSet<User> userContactList;
 
     private Socket clientSocket;
@@ -95,8 +98,7 @@ public class ClientController {
         // since connection is only done once, we might as well reuse that single Thread.
         connectAndReceiveExecutor = Executors.newSingleThreadExecutor();
         sendMessageExecutor = Executors.newSingleThreadExecutor();
-        userOnlineList = new ArrayList<>();
-        userContactList = new HashSet<>();
+        onlineUserHashSet = new HashSet<>();
     }
 
     /**
@@ -177,7 +179,7 @@ public class ClientController {
      * since a Message can contain: Text OR Image OR Text AND Image
      *
      * @param message String, any alphanumeric + special character
-     * @param icon    Image, jpg or png
+     * @param icon    Image, jpg. TODO implement png functionality
      */
     public void sendChatMsg(String message, ImageIcon icon, ArrayList<User> recipients) {
         // consider storing messages in some data struct.
@@ -188,7 +190,7 @@ public class ClientController {
             //todo will probably implement future object,
             // so a client can't send another message before the first
             // has successfully been written to ObjectOutputStream
-            sendMessageExecutor.execute(new SendMessage(imageTextMsg));
+            sendMessageExecutor.execute(new SendMessage(imageTextMsg, clientSocket));
         }
     }
 
@@ -196,8 +198,25 @@ public class ClientController {
      * TODO
      * @param message chat message only containing text
      */
-    public void sendChatMsg(String message) {
+    public void sendChatMsg(String message, Object[] recipients, MessageType msgType) {
+        assert (user != null);
+        ArrayList<User> recipientList = new ArrayList<>();
 
+        for (Object o:recipients) {
+            if(o instanceof User){
+                recipientList.add((User)o);
+            }
+        }
+        recipientList.remove(user);
+
+        switch (msgType){
+            case TEXT -> {
+                sendMessageExecutor.execute(new SendMessage(new Message(message, user,recipientList, msgType),clientSocket));
+            }
+            case IMAGE -> System.out.println("todo" );
+            case TEXT_IMAGE -> System.out.println("todo");
+
+        }
     }
 
     /**
@@ -210,15 +229,9 @@ public class ClientController {
 
     /**
      * Runnable for reading messages from server.
-     * <p>
-     * Assignment states that all communication is to be done through Object IO Streams
-     * would be way easier to handle responses for both client and server if communication
-     * was done through json formatted strings.
-     * E.g {"type": "message"
-     * "text": "textValue":
-     * "image": "imageValue" }
-     * Just parse response by checking type
-     * then switch statement for different types.
+     * Reads object as generic object, gets type of object by
+     * using conditional and "instance of" and then handles
+     * object returned from server accordingly
      */
 
     private class ReceiveMessage implements Runnable {
@@ -226,25 +239,22 @@ public class ClientController {
         public void run() {
             while (!clientSocket.isClosed()) {
                 try {
-                    System.out.println("reading from server");
                     is = clientSocket.getInputStream();
                     ois = new ObjectInputStream(is);
                     Object o = ois.readObject();
 
-                    if (o instanceof List<?>) {
-                        handleListResponse(o, userOnlineList);
+                    if (o instanceof UserSet) {
+                        handleUserHashSetResponse(o, onlineUserHashSet);
                         // call the interface after response has been handled
-                        connectionHandler.usersUpdatedCallback(userOnlineList);
-                    } else if (o instanceof Message) {
-                        handleMessageResponse(o);
+                        connectionHandler.usersUpdatedCallback(onlineUserHashSet);
                     }
+                    else if (o instanceof Message) {handleMessageResponse(o);}
 
-                    Thread.sleep(250);
                 } catch (IOException e){
+                    e.printStackTrace();
                     exceptionHandler(e, Thread.currentThread(), "");
-                } catch (InterruptedException e){
-                    exceptionHandler(e, Thread.currentThread(), " Thread interrupted");
-                } catch (ClassNotFoundException e){
+                }  catch (ClassNotFoundException e){
+                    e.printStackTrace();
                     exceptionHandler(e, Thread.currentThread(), " error reading from server");
                 }
             }
@@ -252,34 +262,27 @@ public class ClientController {
     }
 
     /**
-     * Distinguishing two generic objects by their
-     * generic parameter is simply not something you can do in Java,
-     * so Receive message has to invoke this mess of a solution.
-     *
+     * takes in an object, casts it to a UserSet obj,
+     * fetches Set from UserSet obj, iterates over the set and
+     * adds elements to hashset.
      * @param o Object read from ObjectInputStream
      */
-    private synchronized void handleListResponse(Object o, ArrayList<User> list) {
-        list.clear(); // to avoid {user1}, {user1, user1, user2}
-        System.out.println("\nCLIENT");
-        for (Object element : (List<?>) o) {
-            if (element instanceof User) {
-                list.add((User) element);
-                System.out.println(element.toString() + "added to list in client " + clientSocket.getLocalPort());
-            }
-            // here we can add functionality for other List<?> responses
-        }
+    private void handleUserHashSetResponse(Object o, HashSet<User> set) {
+        UserSet userSet = (UserSet) o;
+        Set<User> u = userSet.getUserSet();
+        u.parallelStream().forEach(set::add);
     }
 
     /**
      * @param o takes in a message object from OOS,
      * fires the implementation which corresponds to the type of (Message) Object o.
      */
-    private synchronized void handleMessageResponse(Object o) {
+    private void handleMessageResponse(Object o) {
         Message message = (Message) o;
         switch (message.getType()) {
-            case TEXT -> msgReceivedHandler.textMessageReceived(message);
-            case IMAGE -> msgReceivedHandler.imageMessageReceived(message);
-            case TEXT_IMAGE -> msgReceivedHandler.txtAndImgMessageReceived(message);
+            case TEXT -> msgReceivedHandler.textMessageReceived(message, LocalTime.now());
+            case IMAGE -> msgReceivedHandler.imageMessageReceived(message, LocalTime.now());
+            case TEXT_IMAGE -> msgReceivedHandler.txtAndImgMessageReceived(message, LocalTime.now());
         }
     }
 
@@ -287,37 +290,49 @@ public class ClientController {
      *
      */
     private class SendMessage implements Runnable {
-        public SendMessage(Message message) {
+        private Message message;
+
+        public SendMessage(Message message, Socket socket) {
+            this.message = message;
+        }
+
+        @Override
+        public void run() {
             try{
+                os = clientSocket.getOutputStream();
+                oos = new ObjectOutputStream(os);
                 oos.writeObject(message);
                 oos.flush();
             } catch (IOException e) {
                 exceptionHandler(e, Thread.currentThread(), " failed to send message" );
             }
         }
-
-        @Override
-        public void run() {
-        }
     }
 
     /**
-     *
+     * Connects client to server and uploads an instance of User(String userName, Byte[] img]
      */
     private class ClientConnect implements Runnable {
         private final String username;
         private final String path;
 
+        /**
+         * Constructor, input parameters fetched from listening to ui components
+         * @param username string representation of a username
+         * @param imgPath string representation of path of image (user avatar)
+         */
         public ClientConnect(String username, String imgPath) {
             this.username = username;
             this.path = imgPath;
         }
 
+        /**
+         * see inline comments for step-by-step walk through
+         */
         @Override
         public void run() {
             try {
-                // path --> bufferedImg --> bytearr
-
+                // step 1: read image from file
                 BufferedImage bufferedImage = ImageIO.read(new File(path));
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 ImageIO.write(bufferedImage, "jpg", baos);
@@ -325,18 +340,21 @@ public class ClientController {
                 byte[] imageInByteArr = baos.toByteArray();
                 baos.close();
 
+                // step 2: create user object
                 user = new User(username,imageInByteArr);
                 InetAddress address = InetAddress.getByName(ip);
+
+                // step 3: establish connection to server
                 clientSocket = new Socket(address, port);
+
+                // step 4: write user object to server
                 os = clientSocket.getOutputStream();
-                //BufferedOutputStream bos = new BufferedOutputStream(os);
-                ObjectOutputStream oos = new ObjectOutputStream(os);
+                oos = new ObjectOutputStream(os);
                 oos.writeObject(user);
                 oos.flush();
 
-                // notify gui that connection is established
+                // fire connection listener .connectionOpenedCallback()
                 connectionHandler.connectionOpenedCallback("Success established connection to: " + clientSocket.getInetAddress().toString(), user);
-                // end of runnable
             } catch (IOException e) {
                 exceptionHandler(e, Thread.currentThread(), "failed to connect");
             }
@@ -406,18 +424,33 @@ public class ClientController {
             System.out.println(t.getName() + messageToGUI);
         }
     }
+
+    /**
+     *
+     * @return the user registered from client
+     */
     public User getUser() {
         return user;
     }
 
+    /**
+     * @return ip of server
+     */
     public String getServerIP() {
         return ip;
     }
 
+    /**
+     * @return port of server
+     */
     public int getServerPort() {
         return port;
     }
 
+    /**
+     *
+     * @return port of client
+     */
     public int getLocalPort() {
         if (clientSocket != null) {
             return clientSocket.getLocalPort();

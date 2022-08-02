@@ -3,6 +3,7 @@ package client.controller;
 import entity.User;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  *
@@ -11,7 +12,7 @@ public interface IConnectionHandler {
     /**
      *
      */
-    void usersUpdatedCallback(ArrayList<User> onlineUserList);
+    void usersUpdatedCallback(HashSet<User> onlineUserSet);
     /**
      *
      */

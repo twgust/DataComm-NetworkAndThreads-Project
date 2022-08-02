@@ -2,6 +2,7 @@ package client;
 
 import client.controller.ClientController;
 import client.view.ClientGUI;
+import entity.MessageType;
 
 public class RunClient {
     public static void main(String[] args) {
@@ -24,7 +25,11 @@ public class RunClient {
         ClientGUI gui4 = new ClientGUI(clientController4);
         gui4.connect("userFour", "src/client/images/cat.jpg");
 
-        // testing disconnect
-        gui1.disconnect();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        gui1.sendMessage("hello world!",MessageType.TEXT);
     }
 }
