@@ -12,12 +12,9 @@ import java.io.*;
 import java.net.*;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 
 /**
@@ -54,7 +51,6 @@ import java.util.logging.Logger;
  *
  */
 public class ClientController {
-    private Logger log;
 
     private IConnectionHandler connectionHandler;
     private IMessageReceivedHandler msgReceivedHandler;
@@ -67,22 +63,22 @@ public class ClientController {
     private HashSet<User> onlineUserHashSet;
     private HashSet<User> userContactList;
 
-    private Socket clientSocket;
 
-    private String ip;
-    private int port;
-    private int localPort;
+    private final String ip;
+    private final int port;
 
-    private InputStream is;
-    private ObjectInputStream ois;
-    private OutputStream os;
-    private ObjectOutputStream oos;
+    private  Socket clientSocket;
 
-    private final ExecutorService connectAndReceiveExecutor;
-    private final ExecutorService sendMessageExecutor;
+    private  ObjectInputStream ois;
+    private  InputStream is;
+    private  ObjectOutputStream oos;
+    private  OutputStream os;
 
+    // threads.
+    private ExecutorService threadPool;
     private ReceiveMessage receiveMessage;
     private SendMessage sendMessage;
+    private ClientConnect connect;
     private User user;
 
     /**
@@ -91,13 +87,12 @@ public class ClientController {
      * @param port port of server
      */
     public ClientController(String ip, int port) {
-        log = Logger.getLogger("client");
         this.port = port;
         this.ip = ip;
 
         // since connection is only done once, we might as well reuse that single Thread.
-        connectAndReceiveExecutor = Executors.newSingleThreadExecutor();
-        sendMessageExecutor = Executors.newSingleThreadExecutor();
+
+
         onlineUserHashSet = new HashSet<>();
     }
 
@@ -149,26 +144,43 @@ public class ClientController {
      * @param path path of image to be sent to server
      */
     public void connectToServer(String username, String path) {
-        // empty as of now
-        ClientConnect connect = new ClientConnect(username, path);
-        Future<?> connectTask = connectAndReceiveExecutor.submit(connect);
-        while (true) {
+        connect = new ClientConnect(username, path);
+        receiveMessage = new ReceiveMessage();
+
+        threadPool = Executors.newFixedThreadPool(4);
+        FutureTask<String> connectTask = new FutureTask<>(connect, "good");
+        threadPool.submit(connectTask);
             // important: returns true even if an exception was encountered,
             // connectTask.get() returns null if completed successfully
-            if (connectTask.isDone()) {
-
-                break;
+            try{
+                if (connectTask.get().equals("good")) {
+                    // fire connection listener .connectionOpenedCallback()
+                    connectionHandler.connectionOpenedCallback
+                            ("Success established connection to: " + clientSocket.getInetAddress().toString(), user);
+                }
+            }catch (InterruptedException | ExecutionException e){
+                e.printStackTrace();
             }
-        }
-        connectAndReceiveExecutor.execute(new ReceiveMessage());
+            Thread t = new Thread(new ReceiveMessage());
+            t.start();
+       // threadPool.submit(receiveMessage);
     }
-
+    private void setupStreams(Socket socket){
+        try{
+            this.os = socket.getOutputStream();
+            this.oos = new ObjectOutputStream(os);
+            this.is = socket.getInputStream();
+            this.ois = new ObjectInputStream(is);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
     /**
      * disconnects the user and closes the socket, invoked by gui.
      */
     public void disconnectFromServer() {
         System.out.println("disconnect");
-        connectAndReceiveExecutor.shutdownNow();
+//        connectAndReceiveExecutor.shutdownNow();
         ExecutorService disconnectClient = Executors.newSingleThreadExecutor();
         disconnectClient.execute(new ClientDisconnect(clientSocket.getRemoteSocketAddress().toString()));
     }
@@ -190,7 +202,7 @@ public class ClientController {
             //todo will probably implement future object,
             // so a client can't send another message before the first
             // has successfully been written to ObjectOutputStream
-            sendMessageExecutor.execute(new SendMessage(imageTextMsg, clientSocket));
+        //    sendMessageExecutor.execute(new SendMessage(imageTextMsg, clientSocket));
         }
     }
 
@@ -211,7 +223,7 @@ public class ClientController {
 
         switch (msgType){
             case TEXT -> {
-                sendMessageExecutor.execute(new SendMessage(new Message(message, user,recipientList, msgType),clientSocket));
+                threadPool.submit(new SendMessage(new Message(message, user,recipientList, msgType),clientSocket));
             }
             case IMAGE -> System.out.println("todo" );
             case TEXT_IMAGE -> System.out.println("todo");
@@ -237,23 +249,28 @@ public class ClientController {
     private class ReceiveMessage implements Runnable {
         @Override
         public void run() {
+            int i = 0;
             while (!clientSocket.isClosed()) {
                 try {
-                    is = clientSocket.getInputStream();
-                    ois = new ObjectInputStream(is);
                     Object o = ois.readObject();
-
                     if (o instanceof UserSet) {
+                        i++;
+                        UserSet set = (UserSet) o;
+                        System.out.println("SIZE OF SET:" +
+                                set.getUserSet().size()+ "-"
+                                + user.getUsername() + "-"+
+                                clientSocket.getLocalPort() +
+                                " I = ["+ i + "]");
                         handleUserHashSetResponse(o, onlineUserHashSet);
                         // call the interface after response has been handled
                         connectionHandler.usersUpdatedCallback(onlineUserHashSet);
                     }
-                    else if (o instanceof Message) {handleMessageResponse(o);}
-
-                } catch (IOException e){
-                    e.printStackTrace();
+                    if (o instanceof Message) {handleMessageResponse(o);}
+                }
+                catch (IOException e){
                     exceptionHandler(e, Thread.currentThread(), "");
-                }  catch (ClassNotFoundException e){
+                }
+                catch (ClassNotFoundException e){
                     e.printStackTrace();
                     exceptionHandler(e, Thread.currentThread(), " error reading from server");
                 }
@@ -268,9 +285,11 @@ public class ClientController {
      * @param o Object read from ObjectInputStream
      */
     private void handleUserHashSetResponse(Object o, HashSet<User> set) {
-        UserSet userSet = (UserSet) o;
-        Set<User> u = userSet.getUserSet();
-        u.parallelStream().forEach(set::add);
+        if(o instanceof UserSet){
+            Set<User> u = ((UserSet) o).getUserSet();
+            u.parallelStream().forEach(set::add);
+
+        }
     }
 
     /**
@@ -291,18 +310,25 @@ public class ClientController {
      */
     private class SendMessage implements Runnable {
         private Message message;
-
+        private User user;
         public SendMessage(Message message, Socket socket) {
             this.message = message;
+        }
+        public SendMessage(User user, Socket socket){
+            this.user = user;
         }
 
         @Override
         public void run() {
             try{
-                os = clientSocket.getOutputStream();
-                oos = new ObjectOutputStream(os);
-                oos.writeObject(message);
-                oos.flush();
+                if(message!=null){
+                    oos.writeObject(message);
+                    oos.flush();
+                }
+                else if (user!= null){
+                    oos.writeObject(user);
+                    oos.flush();
+                }
             } catch (IOException e) {
                 exceptionHandler(e, Thread.currentThread(), " failed to send message" );
             }
@@ -346,15 +372,13 @@ public class ClientController {
 
                 // step 3: establish connection to server
                 clientSocket = new Socket(address, port);
+                setupStreams(clientSocket);
 
                 // step 4: write user object to server
-                os = clientSocket.getOutputStream();
-                oos = new ObjectOutputStream(os);
                 oos.writeObject(user);
                 oos.flush();
 
-                // fire connection listener .connectionOpenedCallback()
-                connectionHandler.connectionOpenedCallback("Success established connection to: " + clientSocket.getInetAddress().toString(), user);
+
             } catch (IOException e) {
                 exceptionHandler(e, Thread.currentThread(), "failed to connect");
             }

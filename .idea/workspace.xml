@@ -5,8 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/client/controller/IMessageReceivedHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/IMessageReceivedHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/entity/Message.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/Message.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/server/controller/Client.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/server/controller/MessageBuffer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/RunClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/RunClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/controller/ClientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/view/ClientGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/view/ClientGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/ClientBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ClientBuffer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/MessageReceivedListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/MessageReceivedListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/ServerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/view/ServerGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/view/ServerGUI.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -17,8 +25,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Enum" />
-        <option value="Class" />
         <option value="Interface" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -138,7 +146,8 @@
       <workItem from="1659341165404" duration="11907000" />
       <workItem from="1659361781455" duration="18408000" />
       <workItem from="1659424822942" duration="34434000" />
-      <workItem from="1659476195490" duration="682000" />
+      <workItem from="1659476195490" duration="1001000" />
+      <workItem from="1659506513487" duration="17729000" />
     </task>
     <servers />
   </component>
@@ -169,5 +178,10 @@
         </breakpoint>
       </breakpoints>
     </breakpoint-manager>
+    <pin-to-top-manager>
+      <pinned-members>
+        <PinnedItemInfo parentTag="entity.UserSet" memberName="setOfUsers" />
+      </pinned-members>
+    </pin-to-top-manager>
   </component>
 </project>

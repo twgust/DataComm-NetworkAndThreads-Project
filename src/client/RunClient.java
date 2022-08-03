@@ -30,6 +30,6 @@ public class RunClient {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        gui1.sendMessage("hello world!",MessageType.TEXT);
+        //gui1.sendMessage("hello world!",MessageType.TEXT);
     }
 }

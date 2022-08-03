@@ -16,7 +16,7 @@ import java.util.Set;
  * to perform operations on the data structure
  */
 public class ClientBuffer {
-    private HashMap<User, Socket> clientBuffer;
+    private HashMap<User, Client> clientBuffer;
 
     /**
      * Buffer, a thread-safe hashmap implementation containing the connected clients
@@ -32,7 +32,7 @@ public class ClientBuffer {
      * @param user K
      * @param client V
      */
-    protected synchronized void put(User user, Socket client){
+    protected synchronized void put(User user, Client client){
         clientBuffer.put(user,client);
         notifyAll();
     }
@@ -42,11 +42,11 @@ public class ClientBuffer {
      * @return returns value for K: user
      * @throws InterruptedException if wait() is interrupted exception is thrown
      */
-    protected synchronized Socket get(User user) throws InterruptedException{
-        while(clientBuffer.isEmpty()){
+    protected synchronized Client get(User user) throws InterruptedException{
+        if(clientBuffer.isEmpty()){
             wait();
         }
-        return clientBuffer.getOrDefault(user, null);
+        return clientBuffer.get(user);
     }
 
     /**
@@ -55,7 +55,7 @@ public class ClientBuffer {
      * @throws InterruptedException if wait() is interrupted exception is thrown
      */
     protected synchronized void removeUser(User user) throws InterruptedException{
-        while(clientBuffer.isEmpty()){
+        if(clientBuffer.isEmpty()){
             wait();
         }
         clientBuffer.remove(user);

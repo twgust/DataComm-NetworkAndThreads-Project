@@ -23,6 +23,8 @@ public class ServerGUI implements LoggerCallBack {
     private Style style;
 
     private DefaultListModel listModel;
+    private StringBuilder builder;
+
     private JList list;
 
     private Font font;
@@ -38,6 +40,7 @@ public class ServerGUI implements LoggerCallBack {
         this.serverController = serverController;
         //serverController.addConnectionListener(this);
         serverController.addLoggerCallbackImpl(this);
+        builder = new StringBuilder();
     }
 
 
@@ -62,10 +65,8 @@ public class ServerGUI implements LoggerCallBack {
         JPanel panel = new JPanel();
 
         textPane = new JTextPane();
-
         textPane.setBackground(Color.BLACK);
         set = new SimpleAttributeSet();
-
         StyleConstants.setItalic(set, true);
         textPane.setCharacterAttributes(set, true);
 
@@ -75,7 +76,7 @@ public class ServerGUI implements LoggerCallBack {
         StyleConstants.setForeground(style, Color.CYAN);
         StyleConstants.setBold(style, true);
 
-        textPane.setBorder(BorderFactory.createTitledBorder("hello"));
+        textPane.setBorder(BorderFactory.createMatteBorder(2,2,2,2,Color.CYAN));
         frame.add(new JScrollPane(textPane));
 
 
@@ -87,7 +88,13 @@ public class ServerGUI implements LoggerCallBack {
         frame.setVisible(true);
        // frame.add(textArea);
     }
-
+    private String buildString(Level level, String info, LocalTime time){
+        return builder.append("SERVER: [").append(time.getHour()).append(':')
+                .append(time.getMinute()).append(':')
+                .append(time.getSecond()).append(']')
+                .append('<').append(level.getName()).append('>')
+                .append(info).append("\n\n").toString();
+    }
     /**
      * Callback interface
      * fires when controller invokes this implementation of logInfoToGui
@@ -97,22 +104,18 @@ public class ServerGUI implements LoggerCallBack {
     @Override
     public void logInfoToGui(Level level, String info, LocalTime time) {
             SwingUtilities.invokeLater(()-> {
-                StringBuilder builder = new StringBuilder();
+                try {
                 if (level.equals(Level.WARNING)) {
+                    doc.insertString(doc.getLength(), buildString(level, info, time), style);
                     // change style
                 }
                 else {
-                    try {
-                        //String str = ("SERVER: [" + time.getHour() + time.getMinute() + time.getSecond() + " <" + level.getName() +"> " + info)
-                        builder.append("SERVER: [").append(time.getHour()).append(':')
-                                .append(time.getMinute()).append(':')
-                                .append(time.getSecond()).append(']')
-                                .append('<').append(level.getName()).append('>')
-                                .append(info).append("\n\n");
-                        doc.insertString(doc.getLength(), builder.toString(), style);
-                    } catch (BadLocationException e) {
-                        e.printStackTrace();
-                    }
+                    doc.insertString(doc.getLength(), buildString(level, info, time), style);
+                }
+
+                }
+                catch (BadLocationException e) {
+                    JOptionPane.showMessageDialog(frame, "BadLocationException E\n" + info);
                 }
             });
     }
