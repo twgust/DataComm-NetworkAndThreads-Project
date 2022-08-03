@@ -1,9 +1,7 @@
 package server.view;
 
-import entity.User;
-import server.controller.LoggerCallBack;
+import server.controller.ServerInterface.LoggerCallBack;
 import server.controller.ServerController;
-import server.controller.UserConnectionCallback;
 
 import javax.swing.*;
 import javax.swing.text.*;

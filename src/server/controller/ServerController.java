@@ -3,8 +3,12 @@ package server.controller;
 import entity.Message;
 import entity.User;
 import entity.UserSet;
+import server.Entity.Client;
 import server.controller.Buffer.ClientBuffer;
 import server.controller.Buffer.UserBuffer;
+import server.controller.ServerInterface.LoggerCallBack;
+import server.controller.ServerInterface.MessageReceivedListener;
+import server.controller.ServerInterface.UserConnectionCallback;
 import server.controller.Threads.ServerMainThread;
 
 import java.io.*;
@@ -17,6 +21,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 
 
@@ -54,33 +59,32 @@ import java.util.logging.Level;
 
 public class ServerController
         implements UserConnectionCallback, MessageReceivedListener {
-    Class serverClass = ServerController.class;
-
-    private LocalTime time;
-
-    private ServerSocket serverSocket;
-    private final ExecutorService threadPool;
 
     // server
     private final int port;
     private final ClientBuffer clientBuffer;
     private final UserBuffer userBuffer;
 
+    // server threads
+    private ExecutorService threadPool;
+    private ExecutorService serverExecutor;
+
+    private ServerMainThread serverMainThread;
+
     // when calling a function of the reference the implementations fire
     private LoggerCallBack loggerCallback;
     private UserConnectionCallback userConnectionCallback;
     private MessageReceivedListener messageReceivedListener;
     private ArrayList<MessageReceivedListener> messageReceivedListeners;
-    private volatile HashSet<User> hashSet;
     /**
      * Constructor
      * @param port The port on which the Server is run on.
      */
     public ServerController(int port){
-        threadPool = Executors.newCachedThreadPool();
         clientBuffer = new ClientBuffer();
         userBuffer = new UserBuffer();
         this.port = port;
+        startServer();
     }
 
     /**
@@ -123,9 +127,10 @@ public class ServerController
         loggerCallback.logInfoToGui(Level.INFO, logStartServerMsg , LocalTime.now());
 
         // start Server
-        ExecutorService server = Executors.newSingleThreadExecutor();
-        ServerMainThread main = new ServerMainThread(port, clientBuffer, loggerCallback, userConnectionCallback);
-        server.execute(main);
+        serverExecutor = Executors.newSingleThreadExecutor();
+        threadPool = Executors.newCachedThreadPool();
+        serverMainThread = new ServerMainThread(port, clientBuffer, loggerCallback, userConnectionCallback);
+        serverExecutor.execute(serverMainThread);
     }
 
     /**
@@ -192,17 +197,26 @@ public class ServerController
         String logDisconnectMessage = disconnectedClient + " disconnected fro server";
         loggerCallback.logInfoToGui(Level.INFO,logDisconnectMessage, LocalTime.now());
     }
+
+    /**
+     *
+     * @param message
+     * @param client
+     * @param oos
+     */
     @Override
     public void onMessageReceived(Message message, Socket client, ObjectOutputStream oos) {
-        loggerCallback.logInfoToGui(Level.INFO, "message received from: "
-                + message.getAuthor()+ " [" + message.getTextMessage()+"]", LocalTime.now());
-        for (User user: message.getRecipientList()) {
-            try{
-                threadPool.execute(new SendObject(message, clientBuffer.get(user)));
-            }catch (InterruptedException e){
-                e.printStackTrace();
+        threadPool.execute(()->{
+            loggerCallback.logInfoToGui(Level.INFO, "message received from: "
+                    + message.getAuthor()+ " [" + message.getTextMessage()+"]", LocalTime.now());
+
+            for (User user: message.getRecipientList()) {
+
+                new SendObject(message,client,oos).run();
             }
-        }
+        });
+
+
     }
 
     /**
@@ -210,22 +224,28 @@ public class ServerController
      * Writes to connected clients ObjectOutputStream
      */
     private class SendObject implements Runnable{
+        // update lists
         private UserSet objectOutSet;
         private User user; // recipient of message
+
+        //send message
+        private Message message;
+
+        // socket and stream to send to
         private Socket socket;
         private ObjectOutputStream oos;
 
-        private Client client;
-        private Message message;
+
 
         /**
          * Constructor for sending messages to clients
          * @param message message to be sent
-         * @param client client which sent the request to server
+         * @param socket client which sent the request to server
          */
-        public SendObject(Message message, Client client){
+        public SendObject(Message message, Socket socket, ObjectOutputStream oos){
             this.message = message;
-            this.client = client;
+            this.socket = socket;
+            this.oos = oos;
         }
 
         /**
@@ -290,7 +310,7 @@ public class ServerController
                     Object o = ois.readObject();
                     if(o instanceof Message){
                         Message message = (Message)o;
-                        System.out.println(message.getTextMessage());
+                        messageReceivedListener.onMessageReceived(message, client.getSocket(), client.getOos());
                     }
 
                     Thread.sleep(250);

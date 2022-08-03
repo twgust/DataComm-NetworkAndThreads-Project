@@ -1,11 +1,9 @@
 package server.controller.Buffer;
 
 import entity.User;
-import server.controller.Client;
+import server.Entity.Client;
 
 
-import java.io.Serializable;
-import java.net.Socket;
 import java.util.HashMap;
 import java.util.Set;
 

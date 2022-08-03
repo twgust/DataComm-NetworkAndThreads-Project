@@ -1,4 +1,4 @@
-package server.controller;
+package server.controller.Buffer;
 
 import entity.Message;
 import entity.UserSet;

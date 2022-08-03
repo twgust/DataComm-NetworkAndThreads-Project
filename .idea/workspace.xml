@@ -5,15 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/server/controller/Buffer/UserBuffer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/controller/Threads/ServerMainThread.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/RunClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/RunClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/controller/ClientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/entity/UserSet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/UserSet.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/ClientBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Buffer/ClientBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/LoggerCallBack.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/LoggerCallBack.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/RunServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/RunServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/avatars/userFour.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/avatars/userOne.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/avatars/userThree.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/avatars/userTwo.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/Buffer/ClientBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Buffer/ClientBuffer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/Entity/Client.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/LoggerCallBack.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerInterface/LoggerCallBack.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/MessageBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Buffer/MessageBuffer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/MessageReceivedListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerInterface/MessageReceivedListener.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/controller/ServerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/Threads/ServerMainThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Threads/ServerMainThread.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/UserConnectionCallback.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerInterface/UserConnectionCallback.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/view/ServerGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/view/ServerGUI.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -151,7 +156,7 @@
       <workItem from="1659361781455" duration="18408000" />
       <workItem from="1659424822942" duration="34434000" />
       <workItem from="1659476195490" duration="1001000" />
-      <workItem from="1659506513487" duration="30608000" />
+      <workItem from="1659506513487" duration="33228000" />
     </task>
     <servers />
   </component>

@@ -1,8 +1,10 @@
 package server.controller.Threads;
 
 import entity.User;
-import server.controller.*;
+import server.Entity.Client;
 import server.controller.Buffer.ClientBuffer;
+import server.controller.ServerInterface.LoggerCallBack;
+import server.controller.ServerInterface.UserConnectionCallback;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
