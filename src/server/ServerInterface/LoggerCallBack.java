@@ -1,6 +1,5 @@
-package server.controller.ServerInterface;
+package server.ServerInterface;
 
-import java.awt.*;
 import java.time.LocalTime;
 import java.util.logging.Level;
 

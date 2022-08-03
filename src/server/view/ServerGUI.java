@@ -1,6 +1,6 @@
 package server.view;
 
-import server.controller.ServerInterface.LoggerCallBack;
+import server.ServerInterface.LoggerCallBack;
 import server.controller.ServerController;
 
 import javax.swing.*;
@@ -36,9 +36,11 @@ public class ServerGUI implements LoggerCallBack {
     public ServerGUI(ServerController serverController, int width, int height) throws BadLocationException {
         setupFrame(width,height);
         this.serverController = serverController;
-        //serverController.addConnectionListener(this);
         serverController.addLoggerCallbackImpl(this);
         builder = new StringBuilder();
+    }
+    public void init(){
+        serverController.startServer();
     }
 
 
