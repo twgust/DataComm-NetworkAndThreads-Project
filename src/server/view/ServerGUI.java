@@ -89,6 +89,7 @@ public class ServerGUI implements LoggerCallBack {
        // frame.add(textArea);
     }
     private String buildString(Level level, String info, LocalTime time){
+        builder = new StringBuilder();
         return builder.append("SERVER: [").append(time.getHour()).append(':')
                 .append(time.getMinute()).append(':')
                 .append(time.getSecond()).append(']')

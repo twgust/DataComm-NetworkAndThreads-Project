@@ -29,7 +29,7 @@ public class UserSet implements Serializable {
      *
      * @return returns the hashset <User>
      */
-    public  Set<User> getUserSet()   {
+    public Set<User> getUserSet()   {
         if(setOfUsers != null){
             return setOfUsers;
         }

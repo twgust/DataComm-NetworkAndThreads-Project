@@ -3,10 +3,10 @@ package server.controller;
 import entity.Message;
 import entity.User;
 import entity.UserSet;
+import server.controller.Buffer.ClientBuffer;
+import server.controller.Buffer.UserBuffer;
+import server.controller.Threads.ServerMainThread;
 
-import javax.imageio.ImageIO;
-
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -48,7 +48,7 @@ import java.util.logging.Level;
  * 4.2 On Client reconnect, send the stored Message []
  *
  * 5, Log all traffic on the server to a locally stored File []
- * 5.1 Display all traffic on the server through a Server GUI (ServerView) [] Partial
+ * 5.1 Display all traffic on the server through a Server GUI (ServerView) [x] Partial
  * ----------------------------------------------------------------------------*
  */
 
@@ -64,14 +64,14 @@ public class ServerController
     // server
     private final int port;
     private final ClientBuffer clientBuffer;
-    private UserSet userSet;
+    private final UserBuffer userBuffer;
 
     // when calling a function of the reference the implementations fire
     private LoggerCallBack loggerCallback;
     private UserConnectionCallback userConnectionCallback;
     private MessageReceivedListener messageReceivedListener;
     private ArrayList<MessageReceivedListener> messageReceivedListeners;
-    private HashSet<User> hashSet;
+    private volatile HashSet<User> hashSet;
     /**
      * Constructor
      * @param port The port on which the Server is run on.
@@ -79,6 +79,7 @@ public class ServerController
     public ServerController(int port){
         threadPool = Executors.newCachedThreadPool();
         clientBuffer = new ClientBuffer();
+        userBuffer = new UserBuffer();
         this.port = port;
     }
 
@@ -115,17 +116,16 @@ public class ServerController
      * invoked by ServerGUI.
      */
     public void startServer(){
-
+        registerCallbackListeners();
 
         // log to server gui
         String logStartServerMsg = "initializing server on port: [" + port + "]";
         loggerCallback.logInfoToGui(Level.INFO, logStartServerMsg , LocalTime.now());
 
-        // start server thread
-        ServerConnect connect = new ServerConnect(this);
-        Thread T = new Thread(connect);
-        T.start();
-        registerCallbackListeners();
+        // start Server
+        ExecutorService server = Executors.newSingleThreadExecutor();
+        ServerMainThread main = new ServerMainThread(port, clientBuffer, loggerCallback, userConnectionCallback);
+        server.execute(main);
     }
 
     /**
@@ -136,8 +136,39 @@ public class ServerController
         ServerDisconnect disconnect = new ServerDisconnect();
     }
 
+    /**
+     * Implementation of the UserConnectionCallback interface,
+     * fires on successful client connection
+     * @param connectedClient connected Client
+     */
+    @Override
+    public void onUserConnectListener(User connectedClient) {
+        // logic executes in thread
+        threadPool.submit((() -> {
 
+            String logOnUserConnectMsg;
+            logOnUserConnectMsg = "adding " + connectedClient + " to list of online clients";
+            loggerCallback.logInfoToGui(Level.INFO, logOnUserConnectMsg, LocalTime.now());
 
+            // put the connected client in the user buffer (HashSet<User>)
+            userBuffer.put(connectedClient);
+
+            // fetch the userHashSet, userBuffer is synchronized and thread-safe
+            HashSet<User> userHashSet = userBuffer.getUserBuffer();
+
+            // for each connected client,
+            // send an instance of the  UserSet Class (<HashSet<User> set, User connectedClient);
+            for (User u: clientBuffer.getKeySet()) {
+                try{
+                    // for each user in buffer, update their "online list"
+                    // Runnable still runs on thread assigned at start of func pool.
+                    new SendObject(new UserSet(userHashSet,connectedClient),u,
+                            clientBuffer.get(u).getSocket(),
+                            clientBuffer.get(u).getOos()).run();
+                }catch (InterruptedException e){e.printStackTrace();}
+            }
+        }));
+    }
     /**
      * WIP
      * Removes disconnected K:User V: Socket from buffer,
@@ -161,38 +192,6 @@ public class ServerController
         String logDisconnectMessage = disconnectedClient + " disconnected fro server";
         loggerCallback.logInfoToGui(Level.INFO,logDisconnectMessage, LocalTime.now());
     }
-
-    /**
-     * Implementation of the UserConnectionCallback interface,
-     * fires on successful client connection
-     * @param connectedClient connected Client
-     */
-    @Override
-    public void onUserConnectListener(User connectedClient) {
-        // get the KeySet (set of users) from buffer that has an active connection with server
-        Set<User> bufferKeySet = clientBuffer.getKeySet();
-        UserSet set;
-
-        // default case
-        if (hashSet!=null){
-            hashSet.add(connectedClient);
-            set = new UserSet(hashSet, connectedClient);
-            updateOnlineUsersForClients(bufferKeySet,set);
-        }
-
-        // only one user online, why display yourself?
-        if (hashSet == null) {
-            hashSet = new HashSet<>();
-            bufferKeySet.parallelStream().forEach((u) -> {
-                hashSet.add(u);
-            });
-            set = new UserSet(hashSet, connectedClient);
-        }
-
-        String logOnUserConnectMsg;
-        logOnUserConnectMsg = "adding " + connectedClient + " to list of online clients";
-        loggerCallback.logInfoToGui(Level.INFO, logOnUserConnectMsg, LocalTime.now());
-    }
     @Override
     public void onMessageReceived(Message message, Socket client, ObjectOutputStream oos) {
         loggerCallback.logInfoToGui(Level.INFO, "message received from: "
@@ -203,30 +202,6 @@ public class ServerController
             }catch (InterruptedException e){
                 e.printStackTrace();
             }
-        }
-    }
-
-    /*
-     * Invoked by one of the connection callbacks (onUserConnect/onUserDisconnect)
-     * Iterates over all connected sockets, each socket is sent an updated HashSet and handled user (UserSet)
-     * @param set of Keys to enable access operation on the Buffer HashMap (K:User, V:Socket)
-     */
-    private synchronized void updateOnlineUsersForClients(Set<User> set, UserSet objectOutUserSet){
-        // Iterate over the set of connected Users
-        for (User user: set) {
-            try{
-                // for each online user: grab a reference to their Socket
-                Client client = clientBuffer.get(user);
-
-                // log to server gui
-                String logUpdateOnlineListMsg = "Updating online list for " + user + " - " + set.size();
-                loggerCallback.logInfoToGui(Level.INFO, logUpdateOnlineListMsg, LocalTime.now());
-                System.out.println(objectOutUserSet.getUserSet().size() + " ? for " + user);
-                // For each user: assign a thread from pool which executes the SendObject runnable to the associated socket
-                // effectively updating the client collection of online users
-                SendObject updateListForClient = new SendObject(objectOutUserSet, user, client.getSocket(), client.getOos());
-                threadPool.execute(updateListForClient);
-            } catch (InterruptedException e){e.printStackTrace();}
         }
     }
 
@@ -268,21 +243,24 @@ public class ServerController
         @Override
         public void run() {
             try {
+
+                // 1)
+                // the Client will receive a "UserSet" which includes:
+                // a HashSet<User> of online users
+                // a User object which represents the disconnected/Connected client in the UserConnectionInterface
                 if(this.objectOutSet != null){
+                    String str = "Sending UserSet:{'<Hashset<User>', User: '"+ objectOutSet.getHandledUser() + "'} " +
+                            "to --> " +  user + " @"  + socket.getInetAddress();
+                    loggerCallback.logInfoToGui(Level.INFO, str, LocalTime.now());
+
                     oos.writeObject(objectOutSet);
-                    System.out.println("wrote " + objectOutSet.getUserSet().size() + " to " + socket.getLocalPort());
                     oos.reset();
                 }
-
+                /**
+                 * TODO
+                 */
                 else if(this.message != null){
-                    /* TODO
-                    ObjectOutputStream oos  = client.getOos();
-                    oos.writeObject(message);
-                    oos.flush();
-                    loggerCallback.logInfoToGui(Level.INFO, "writing "    +
-                            message.getAuthor()+ " [" + message.getTextMessage()+"]", LocalTime.now());
 
-                     */
                 }
 
 
@@ -327,92 +305,6 @@ public class ServerController
 
             }
         }
-    }
-
-    /**
-     * Runnable for initializing the server
-     */
-    private class ServerConnect implements Runnable{
-        private ServerController controller;
-        public ServerConnect(ServerController controller){
-            this.controller=controller;
-        }
-        @Override
-        public void run(){
-            try {
-                serverSocket = new ServerSocket(port);
-                String logServerRunningMsg = " server running on port: [" + port + "]";
-                loggerCallback.logInfoToGui(Level.INFO, logServerRunningMsg, LocalTime.now());
-
-                // multithreaded server
-                while(true){
-                    Socket clientSocket = serverSocket.accept();
-                    // start timer after client connection accepted
-                    long start = System.currentTimeMillis();
-
-                    // set up streams for client
-                    InputStream is = clientSocket.getInputStream();
-                    ObjectInputStream ois = new ObjectInputStream(is);
-                    OutputStream os = clientSocket.getOutputStream();
-                    ObjectOutputStream oos = new ObjectOutputStream(os);
-
-                    // black magic wizardry
-                    User user = null;
-                    Object oUser = null;
-
-                    // Step 1) read object
-                    try{
-                         oUser = ois.readObject();
-                    }catch (EOFException e){
-                        handleIOException(e,"ServerConnect.run()", Thread.currentThread(), null, "");
-                    }
-                    // Step 2) check type of generic object oUser since the client can other objects through the stream
-                    if(oUser instanceof User){
-                        // Step 3) cast the generic to User and read the byte[]
-                        user = (User) oUser;
-                        byte[] imgInBytes = user.getAvatarAsByteBuffer();
-
-                        // Step 4) buffer the img and write it to server storage
-                        ByteArrayInputStream bais = new ByteArrayInputStream(imgInBytes);
-                        BufferedImage img = ImageIO.read(bais);
-                        String path = "src/server/avatars/"+ user.getUsername() + ".jpg";
-                        ImageIO.write(img, "jpg", new File(path)); //Save the file, works!
-                        // ImageIcon imageIcon = new ImageIcon(imgInBytes); works!
-
-                        // Step 5) put the buffer in the user, enabling server to perform operations on client
-                        Client client = new Client(clientSocket, oos, ois);
-                        clientBuffer.put(user, client);
-
-                        // start a separate thread which listens to client
-                        try{
-                            threadPool.execute(new ReceiveMessage(clientBuffer.get(user)));
-
-                        }catch (InterruptedException e){
-                            e.printStackTrace();
-                        }
-                    }
-
-                    // log to server gui
-                    long end = (System.currentTimeMillis() - start);
-                    String logClientTimeToConnectMsg = "finished processing client [" + clientSocket.getLocalAddress() + "] in " + end + "ms";
-                    loggerCallback.logInfoToGui(Level.INFO, logClientTimeToConnectMsg, LocalTime.now());
-
-                    // log to server gui
-                    String logUserConnectedMsg = user.getUsername() + " connected to server";
-                    loggerCallback.logInfoToGui(Level.INFO, logUserConnectedMsg, LocalTime.now());
-
-                    // step 6) fire implementation of userConnectionCallback
-                    userConnectionCallback.onUserConnectListener(user);
-
-                    System.out.println("good!");
-                }
-            }
-            catch (IOException e) {handleIOException(e,"ServerConnect.run()",Thread.currentThread(),null, "");}
-            catch (ClassNotFoundException e) {e.printStackTrace();}
-        }
-    }
-    private void validateConnectionRequest(Socket client, Object o){
-
     }
 
     /**

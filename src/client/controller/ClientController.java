@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.logging.Logger;
 
 /**
  * Notes and Requirements for Client:
@@ -26,12 +25,12 @@ import java.util.logging.Logger;
  * ----------------------------------------------------------------------------*
  * Functionality to implement for Client:
  * <p>
- * 1, Connect to server: []
- * 2, Create a username and profile picture before connecting: []
- * 3, Disconnect from server: []
+ * 1, Connect to server: [x]
+ * 2, Create a username and profile picture before connecting: [x]
+ * 3, Disconnect from server: [x]
  * <p>
- * 3, Send messages to User(s) - through Server: []
- * 4, Receive messages from User(s) - through Server: []
+ * 3, Send messages to User(s) - through Server: [] partial
+ * 4, Receive messages from User(s) - through Server: [x]
  * <p>
  * 5, Display connected User(s): [X]
  * 6, Add connected users to a Contact list: []
@@ -148,6 +147,7 @@ public class ClientController {
         receiveMessage = new ReceiveMessage();
 
         threadPool = Executors.newFixedThreadPool(4);
+
         FutureTask<String> connectTask = new FutureTask<>(connect, "good");
         threadPool.submit(connectTask);
             // important: returns true even if an exception was encountered,
@@ -161,9 +161,10 @@ public class ClientController {
             }catch (InterruptedException | ExecutionException e){
                 e.printStackTrace();
             }
-            Thread t = new Thread(new ReceiveMessage());
-            t.start();
-       // threadPool.submit(receiveMessage);
+
+            //Thread t = new Thread(new ReceiveMessage());
+            //t.start();
+            threadPool.submit(receiveMessage);
     }
     private void setupStreams(Socket socket){
         try{
@@ -249,19 +250,13 @@ public class ClientController {
     private class ReceiveMessage implements Runnable {
         @Override
         public void run() {
-            int i = 0;
             while (!clientSocket.isClosed()) {
                 try {
                     Object o = ois.readObject();
                     if (o instanceof UserSet) {
-                        i++;
-                        UserSet set = (UserSet) o;
-                        System.out.println("SIZE OF SET:" +
-                                set.getUserSet().size()+ "-"
-                                + user.getUsername() + "-"+
-                                clientSocket.getLocalPort() +
-                                " I = ["+ i + "]");
                         handleUserHashSetResponse(o, onlineUserHashSet);
+                        System.out.println(onlineUserHashSet.size() + " "+ getLocalPort());
+
                         // call the interface after response has been handled
                         connectionHandler.usersUpdatedCallback(onlineUserHashSet);
                     }
@@ -288,7 +283,6 @@ public class ClientController {
         if(o instanceof UserSet){
             Set<User> u = ((UserSet) o).getUserSet();
             u.parallelStream().forEach(set::add);
-
         }
     }
 

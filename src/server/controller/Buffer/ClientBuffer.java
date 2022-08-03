@@ -1,6 +1,7 @@
-package server.controller;
+package server.controller.Buffer;
 
 import entity.User;
+import server.controller.Client;
 
 
 import java.io.Serializable;
@@ -21,7 +22,7 @@ public class ClientBuffer {
     /**
      * Buffer, a thread-safe hashmap implementation containing the connected clients
      * K = User, not by reference but by string since .equals has been overridden.
-     * V = Socket, socket through which the User has connected to the server.
+     * V = Client
      * Not accessible to clients since that would enable clients to perform operations on other Clients(socket)
      */
     public ClientBuffer(){
@@ -32,7 +33,7 @@ public class ClientBuffer {
      * @param user K
      * @param client V
      */
-    protected synchronized void put(User user, Client client){
+    public synchronized void put(User user, Client client){
         clientBuffer.put(user,client);
         notifyAll();
     }
@@ -42,7 +43,7 @@ public class ClientBuffer {
      * @return returns value for K: user
      * @throws InterruptedException if wait() is interrupted exception is thrown
      */
-    protected synchronized Client get(User user) throws InterruptedException{
+    public synchronized Client get(User user) throws InterruptedException{
         if(clientBuffer.isEmpty()){
             wait();
         }
@@ -54,7 +55,7 @@ public class ClientBuffer {
      * @param user user to be removed, invoked on disconnect
      * @throws InterruptedException if wait() is interrupted exception is thrown
      */
-    protected synchronized void removeUser(User user) throws InterruptedException{
+    public synchronized void removeUser(User user) throws InterruptedException{
         if(clientBuffer.isEmpty()){
             wait();
         }
@@ -65,7 +66,7 @@ public class ClientBuffer {
      * @param user the user to look up.
      * @return true if user contains buffer
      */
-    protected synchronized boolean hasUser(User user){
+    public synchronized boolean hasUser(User user){
         return clientBuffer.containsKey(user);
     }
 
@@ -73,21 +74,21 @@ public class ClientBuffer {
     /**
      * @return size, represents nr of clients connected.
      */
-    protected synchronized int size(){
+    public synchronized int size(){
         return clientBuffer.size();
     }
 
     /**
      * test func for now
      */
-    protected synchronized void printAllUsers(){
+    public synchronized void printAllUsers(){
         System.out.println(clientBuffer.keySet());
     }
 
     /**
      * @return the complete keySet of buffer
      */
-    protected synchronized Set<User> getKeySet(){
+    public synchronized Set<User> getKeySet(){
        return  clientBuffer.keySet();
     }
 }
