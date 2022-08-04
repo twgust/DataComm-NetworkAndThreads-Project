@@ -15,7 +15,7 @@ import java.util.Set;
  * to perform operations on the data structure
  */
 public class ClientBuffer {
-    private HashMap<User, Client> clientBuffer;
+    private final HashMap<User, Client> clientBuffer;
 
     /**
      * Buffer, a thread-safe hashmap implementation containing the connected clients

@@ -5,14 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/entity/HandledUserType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/RunClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/RunClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/controller/ClientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/view/ClientGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/view/ClientGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/entity/UserSet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/UserSet.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/RunServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/RunServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/avatars/userFour.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/avatars/userOne.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/avatars/userThree.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/avatars/userTwo.jpg" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/controller/ServerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/ServerInterface/LoggerCallBack.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/ServerInterface/LoggerCallBack.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/ServerInterface/MessageReceivedListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/ServerInterface/MessageReceivedListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/ServerInterface/UserConnectionCallback.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/ServerInterface/UserConnectionCallback.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/controller/Threads/ServerMainThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Threads/ServerMainThread.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/view/ServerGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/view/ServerGUI.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -22,9 +28,9 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Enum" />
         <option value="Interface" />
         <option value="Class" />
+        <option value="Enum" />
       </list>
     </option>
   </component>
@@ -42,7 +48,7 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="ProjectErrors" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectId" id="2CUBWPxoD7ivokdFrHXRigAMjoD" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -152,6 +158,8 @@
       <workItem from="1659506513487" duration="33617000" />
       <workItem from="1659552722787" duration="1725000" />
       <workItem from="1659554479371" duration="93000" />
+      <workItem from="1659597457605" duration="5485000" />
+      <workItem from="1659612722594" duration="363000" />
     </task>
     <servers />
   </component>

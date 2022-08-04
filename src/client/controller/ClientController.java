@@ -1,9 +1,6 @@
 package client.controller;
 
-import entity.Message;
-import entity.MessageType;
-import entity.User;
-import entity.UserSet;
+import entity.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -79,15 +76,17 @@ public class ClientController {
     private SendMessage sendMessage;
     private ClientConnect connect;
     private User user;
+    private String id;
 
     /**
      *
      * @param ip ip or server
      * @param port port of server
      */
-    public ClientController(String ip, int port) {
+    public ClientController(String ip, int port, String id) {
         this.port = port;
         this.ip = ip;
+        this.id = id;
 
         // since connection is only done once, we might as well reuse that single Thread.
 
@@ -162,9 +161,9 @@ public class ClientController {
                 e.printStackTrace();
             }
 
-            //Thread t = new Thread(new ReceiveMessage());
-            //t.start();
-            threadPool.submit(receiveMessage);
+            Thread t = new Thread(new ReceiveMessage());
+            t.start();
+            //threadPool.submit(receiveMessage);
     }
     private void setupStreams(Socket socket){
         try{
@@ -181,9 +180,7 @@ public class ClientController {
      */
     public void disconnectFromServer() {
         System.out.println("disconnect");
-//        connectAndReceiveExecutor.shutdownNow();
-        ExecutorService disconnectClient = Executors.newSingleThreadExecutor();
-        disconnectClient.execute(new ClientDisconnect(clientSocket.getRemoteSocketAddress().toString()));
+        threadPool.submit(new ClientDisconnect());
     }
 
     /**
@@ -250,7 +247,7 @@ public class ClientController {
     private class ReceiveMessage implements Runnable {
         @Override
         public void run() {
-            while (!clientSocket.isClosed()) {
+            while (true) {
                 try {
                     Object o = ois.readObject();
                     if (o instanceof UserSet) {
@@ -280,10 +277,17 @@ public class ClientController {
      * @param o Object read from ObjectInputStream
      */
     private void handleUserHashSetResponse(Object o, HashSet<User> set) {
-        if(o instanceof UserSet){
-            Set<User> u = ((UserSet) o).getUserSet();
-            u.parallelStream().forEach(set::add);
+        if(o instanceof UserSet u){
+            if(u.getUserType().equals(HandledUserType.Connected)){
+                Set<User> tmp = ((UserSet) o).getUserSet();
+                tmp.parallelStream().forEach(set::add);
+            }
+            else if (u.getUserType().equals(HandledUserType.Disconnected)){
+                System.out.println("u");
+                set.remove(u.getHandledUser());
+            }
         }
+        System.out.println(id +",  [SIZE = " + set.size() +  "]");
     }
 
     /**
@@ -383,7 +387,7 @@ public class ClientController {
      *
      */
     private class ClientDisconnect implements Runnable {
-        public ClientDisconnect(String client){
+        public ClientDisconnect(){
 
         }
         @Override

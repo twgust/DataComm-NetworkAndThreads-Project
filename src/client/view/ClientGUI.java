@@ -73,7 +73,7 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
             case TEXT -> clientController.sendChatMsg(message, objects,  msgType);
         }
 
-        }
+    }
 
 
 
@@ -90,7 +90,7 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
      */
     @Override
     public void connectionOpenedCallback(String connected, User u) {
-        System.out.println(connected);
+        System.out.println(u.toString() + connected );
         SwingUtilities.invokeLater(()->{
             frame.setTitle("signed in as " + u);
         });

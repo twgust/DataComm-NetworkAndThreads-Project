@@ -7,10 +7,11 @@ import server.ServerInterface.LoggerCallBack;
 import server.ServerInterface.UserConnectionCallback;
 
 import javax.imageio.ImageIO;
+import javax.net.SocketFactory;
+import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.time.LocalTime;
 import java.util.logging.Level;
 
@@ -18,26 +19,38 @@ import java.util.logging.Level;
  * Concurrent Server
  */
 public class ServerMainThread implements Runnable{
-        private final int port;
-        private final ClientBuffer buffer;
-        private final LoggerCallBack loggerCallBack;
-        private final UserConnectionCallback userConnectionCallback;
+    private final ClientBuffer buffer;
+    private final LoggerCallBack loggerCallBack;
+    private final UserConnectionCallback userConnectionCallback;
 
 
-        public ServerMainThread(int port, ClientBuffer buffer, LoggerCallBack loggerCallBack, UserConnectionCallback userConnectionCallback){
-            this.port = port;
-            this.buffer = buffer;
-            this.loggerCallBack = loggerCallBack;
-            this.userConnectionCallback = userConnectionCallback;
+    public ServerMainThread(ClientBuffer buffer, LoggerCallBack loggerCallBack, UserConnectionCallback userConnectionCallback){
+        this.buffer = buffer;
+        this.loggerCallBack = loggerCallBack;
+        this.userConnectionCallback = userConnectionCallback;
 
-        }
-        @Override
-        public void run(){
-            try {
+    }
+    @Override
+    public void run(){
+        try {
+            ServerSocket serverSocket = null;
+            String logStartServerMsg;
+            while(serverSocket == null){
+                try{
+                    int newPort = Integer.parseInt(JOptionPane.showInputDialog(null, "enter new port"));
+                    // log to server gui
+                    logStartServerMsg = "attempting to initialize server on port: [" + newPort + "]";
+                    loggerCallBack.logInfoToGui(Level.INFO, logStartServerMsg, LocalTime.now());
+                    serverSocket = new ServerSocket(newPort);
 
-                ServerSocket serverSocket = new ServerSocket(port);
-                String logServerRunningMsg = " server running on port: [" + port + "]";
-                loggerCallBack.logInfoToGui(Level.INFO, logServerRunningMsg, LocalTime.now());
+                }catch (BindException e){
+                    logStartServerMsg = "attempt failed, port is busy";
+                    loggerCallBack.logInfoToGui(Level.WARNING, logStartServerMsg, LocalTime.now());
+                }
+            }
+
+            String logServerRunningMsg = " server running on port: [" + serverSocket.getLocalPort() + "]";
+            loggerCallBack.logInfoToGui(Level.INFO, logServerRunningMsg, LocalTime.now());
 
                 // multithreaded server
                 while(true){
