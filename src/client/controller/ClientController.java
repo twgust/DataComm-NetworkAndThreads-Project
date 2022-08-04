@@ -52,7 +52,6 @@ public class ClientController {
     private IMessageReceivedHandler msgReceivedHandler;
 
     // A list containing all currently online users
-    private ArrayList<User> userOnlineList;
 
     // TODO undecided on solution and data struct A Set of the clients Contacts, E = user
     // Loaded from local storage on startup, Saved and updated to local storage on exit
@@ -89,9 +88,6 @@ public class ClientController {
         this.id = id;
 
         // since connection is only done once, we might as well reuse that single Thread.
-
-
-        onlineUserHashSet = new HashSet<>();
     }
 
     /**
@@ -142,28 +138,24 @@ public class ClientController {
      * @param path path of image to be sent to server
      */
     public void connectToServer(String username, String path) {
+        threadPool = Executors.newFixedThreadPool(4);
         connect = new ClientConnect(username, path);
         receiveMessage = new ReceiveMessage();
+        onlineUserHashSet = new HashSet<>();
 
-        threadPool = Executors.newFixedThreadPool(4);
 
         FutureTask<String> connectTask = new FutureTask<>(connect, "good");
         threadPool.submit(connectTask);
-            // important: returns true even if an exception was encountered,
-            // connectTask.get() returns null if completed successfully
+            // connectTask.get() returns "good" if executed without exceptions
             try{
                 if (connectTask.get().equals("good")) {
-                    // fire connection listener .connectionOpenedCallback()
                     connectionHandler.connectionOpenedCallback
                             ("Success established connection to: " + clientSocket.getInetAddress().toString(), user);
                 }
             }catch (InterruptedException | ExecutionException e){
                 e.printStackTrace();
             }
-
-            Thread t = new Thread(new ReceiveMessage());
-            t.start();
-            //threadPool.submit(receiveMessage);
+            threadPool.submit(receiveMessage);
     }
     private void setupStreams(Socket socket){
         try{
@@ -252,7 +244,6 @@ public class ClientController {
                     Object o = ois.readObject();
                     if (o instanceof UserSet) {
                         handleUserHashSetResponse(o, onlineUserHashSet);
-                        System.out.println(onlineUserHashSet.size() + " "+ getLocalPort());
 
                         // call the interface after response has been handled
                         connectionHandler.usersUpdatedCallback(onlineUserHashSet);
@@ -283,11 +274,9 @@ public class ClientController {
                 tmp.parallelStream().forEach(set::add);
             }
             else if (u.getUserType().equals(HandledUserType.Disconnected)){
-                System.out.println("u");
                 set.remove(u.getHandledUser());
             }
         }
-        System.out.println(id +",  [SIZE = " + set.size() +  "]");
     }
 
     /**
@@ -407,6 +396,10 @@ public class ClientController {
                 }
                 if (clientSocket != null) {
                     clientSocket.close();
+                    clientSocket = null;
+
+                    //clear hash set and tell the interface to update gui
+                    onlineUserHashSet.clear();
                     connectionHandler.connectionClosedCallback("You've been disconnected");
                 }
             } catch (IOException e) {

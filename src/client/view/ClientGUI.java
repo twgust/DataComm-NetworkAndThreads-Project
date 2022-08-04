@@ -105,7 +105,7 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
         SwingUtilities.invokeLater(()->{
             textAreaChat.setText("");
             frame.setTitle("offline...");
-            JOptionPane.showMessageDialog(frame, disconnected);
+            listModel.clear();
         });
     }
 

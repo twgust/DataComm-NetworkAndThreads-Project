@@ -145,31 +145,8 @@ public class ServerController implements UserConnectionCallback, MessageReceived
      */
     @Override
     public void onUserConnectListener(User connectedClient) {
-        // logic executes in thread
-        threadPool.submit((() -> {
-            String logOnUserConnectMsg;
-            logOnUserConnectMsg = "adding " + connectedClient + " to list of online clients";
-            loggerCallback.logInfoToGui(Level.INFO, logOnUserConnectMsg, LocalTime.now());
-
-            // put the connected client in the user buffer (HashSet<User>)
-            userBuffer.put(connectedClient);
-
-            // fetch the userHashSet, userBuffer is synchronized and thread-safe
-            HashSet<User> userHashSet = userBuffer.getUserBuffer();
-
-            // for each connected client,
-            // send an instance of the  UserSet Class (<HashSet<User> set, User connectedClient);
-            clientBuffer.getKeySet().parallelStream().forEach(u -> {
-                try {
-                    // for each user in buffer, update their "online list"
-                    // Runnable still runs on thread assigned at start of func pool.
-                    threadPool.execute(new SendObject(new UserSet(userHashSet, connectedClient, HandledUserType.Connected),
-                            u, clientBuffer.get(u).getSocket(), clientBuffer.get(u).getOos()));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            });
-        }));
+        //submit one of the threads from pool to the synch method
+        threadPool.submit(()->  updateOnlineUsers(connectedClient, HandledUserType.Connected));
     }
 
     /**
@@ -178,22 +155,9 @@ public class ServerController implements UserConnectionCallback, MessageReceived
      */
     @Override
     public void onUserDisconnectListener(User disconnectedClient) {
-        threadPool.submit(() -> {
-            String logOnUserDisconnectMessage = "removing " + disconnectedClient + " from list of online clients";
-            loggerCallback.logInfoToGui(Level.WARNING, logOnUserDisconnectMessage, LocalTime.now());
+        //submit one of the threads from pool to the synch method
 
-            try { userBuffer.remove(disconnectedClient); }
-            catch (Exception e) {e.printStackTrace();}
-            HashSet<User> userHashSet = userBuffer.getUserBuffer();
-
-            clientBuffer.getKeySet().parallelStream().forEach((u -> {
-                try{
-                    Client client = clientBuffer.get(u);
-                    new SendObject(new UserSet(userHashSet, disconnectedClient, HandledUserType.Disconnected), u,
-                            client.getSocket(), client.getOos()).run();}
-                catch (InterruptedException e) {e.printStackTrace();}
-            }));
-        });
+        threadPool.submit(() -> updateOnlineUsers(disconnectedClient, HandledUserType.Disconnected));
     }
 
 
@@ -208,7 +172,7 @@ public class ServerController implements UserConnectionCallback, MessageReceived
             loggerCallback.logInfoToGui(Level.INFO, "message received from: " + message.getAuthor() + " [" + message.getTextMessage() + "]", LocalTime.now());
 
             for (User user : message.getRecipientList()) {
-                new SendObject(message, client, oos).run();
+                new Sender(message, client, oos).run();
             }
         });
 
@@ -218,12 +182,65 @@ public class ServerController implements UserConnectionCallback, MessageReceived
     private void handleInterruptedException(Exception e) {
 
     }
+    private synchronized void updateOnlineUsers(User user, HandledUserType type) {
+        switch (type){
+            case Connected -> {
+                String logOnUserConnectMsg;
+                logOnUserConnectMsg = "adding " + user + " to list of online clients";
+                loggerCallback.logInfoToGui(Level.INFO, logOnUserConnectMsg, LocalTime.now());
+
+                // put the connected client in the user buffer (HashSet<User>)
+                userBuffer.put(user);
+
+                // fetch the userHashSet, userBuffer is synchronized and thread-safe
+                HashSet<User> userHashSet = userBuffer.getUserBuffer();
+
+                // for each connected client,
+                // send an instance of the  UserSet Class (<HashSet<User> set, User connectedClient);
+                clientBuffer.getKeySet().parallelStream().forEach(u -> {
+                    try {
+                        // for each user in buffer, update their "online list"
+                        // Runnable still runs on thread assigned at start of func pool.
+                        new Sender(new UserSet(userHashSet, user, HandledUserType.Connected),
+                                u, clientBuffer.get(u).getSocket(), clientBuffer.get(u).getOos()).run();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+
+            case Disconnected ->
+            {
+                String logSocketExceptionMsg = user + " disconnected from the server";
+                loggerCallback.logInfoToGui(Level.WARNING, logSocketExceptionMsg, LocalTime.now());
+
+                try {
+                    userBuffer.remove(user);
+                    clientBuffer.removeUser(user);
+                }
+                catch (Exception e) {e.printStackTrace();}
+                HashSet<User> userHashSet = userBuffer.getUserBuffer();
+
+                clientBuffer.getKeySet().parallelStream().forEach((u -> {
+                    try{
+                        Client client = clientBuffer.get(u);
+                        new Sender(new UserSet(userHashSet, user, HandledUserType.Disconnected), u,
+                                client.getSocket(), client.getOos()).run();}
+                    catch (InterruptedException e) {e.printStackTrace();}
+                }
+
+                ));
+
+
+            }
+        }
+    }
 
     /**
      * Runnable for sending a message to a Client,
      * Writes to connected clients ObjectOutputStream
      */
-    private class SendObject implements Runnable {
+    private class Sender implements Runnable {
         // update lists
         private UserSet objectOutSet;
         private User user; // recipient of message
@@ -242,7 +259,7 @@ public class ServerController implements UserConnectionCallback, MessageReceived
          * @param message message to be sent
          * @param socket  client which sent the request to server
          */
-        public SendObject(Message message, Socket socket, ObjectOutputStream oos) {
+        public Sender(Message message, Socket socket, ObjectOutputStream oos) {
             this.message = message;
             this.socket = socket;
             this.oos = oos;
@@ -254,7 +271,7 @@ public class ServerController implements UserConnectionCallback, MessageReceived
          * @param userSet the set of users + the recent disconnect/connected user as an obj
          * @param user    the user of the user which the update is going to be sent to,
          */
-        public SendObject(UserSet userSet, User user, Socket socket, ObjectOutputStream oos) {
+        public Sender(UserSet userSet, User user, Socket socket, ObjectOutputStream oos) {
             this.socket = socket;
             this.oos = oos;
             this.user = user;
@@ -270,23 +287,27 @@ public class ServerController implements UserConnectionCallback, MessageReceived
                 // a HashSet<User> of online users
                 // a User object which represents the disconnected/Connected client in the UserConnectionInterface
                 if (this.objectOutSet != null) {
-                    String str = "Sending UserSet:{'<Hashset<User>', User: '" + objectOutSet.getHandledUser() + "'} " + "to --> " + user + " @" + socket.getInetAddress();
-                    loggerCallback.logInfoToGui(Level.INFO, str, LocalTime.now());
+
 
                     oos.writeObject(objectOutSet);
                     oos.reset();
+                    String str = "Sent UserSet:{'<Hashset<User>' size of set = " + objectOutSet.getUserSet().size() +", User: '" + objectOutSet.getHandledUser() + "'} " + "to --> " + user + " @" + socket.getInetAddress();
+                    loggerCallback.logInfoToGui(Level.INFO, str, LocalTime.now());
                 }
                 /**
                  * TODO
                  */
                 else if (this.message != null) {
-
+                    oos.writeObject(message);
+                    oos.reset();
+                    String logMessageSentMsg = "Message sent to user: [" + user + "] @IP: " + socket.getInetAddress().toString();
+                    loggerCallback.logInfoToGui(Level.INFO, logMessageSentMsg, LocalTime.now());
                 }
 
 
             } catch (IOException e) {
                 if (e instanceof SocketException) {
-                    e.printStackTrace();
+
                     handleIOException(e, "SendObject.run()", Thread.currentThread(), user, "");
                 }
             }
@@ -340,12 +361,9 @@ public class ServerController implements UserConnectionCallback, MessageReceived
         }
         if (e instanceof SocketException) {
             // assume user disconnect, at any rate the SocketException has the effect of a disconnected user
-
-            // fire the onUserDisconnect event for each implementation of the interface (Server Controller,GUI)
-
             // log to server gui
-            String logSocketExceptionMsg = "Client IP: [" + clientIP + "]  USER:" + user + " disconnected";
-            loggerCallback.logInfoToGui(Level.WARNING, logSocketExceptionMsg, LocalTime.now());
+
+            onUserDisconnectListener(user);
         } else if (e instanceof EOFException) {
             // log to server gui
             String logEndOfFileMsg = "Client: EOF exception for " + user.getUsername() + " in " + methodName;

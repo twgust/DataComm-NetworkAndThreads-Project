@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class RunClient {
-    public static void main(String[] args) {
+    public static void main(String[] args)throws InterruptedException {
         System.out.println("MAIN - Starting clients");
         // distinguish between local clients by port number, not remote address
         // gui starts connection to server because a user will click connect
@@ -25,10 +25,12 @@ public class RunClient {
         ClientGUI g3 = new ClientGUI(c3);
         ClientGUI g4 = new ClientGUI(c4);
         ClientGUI g5 = new ClientGUI(c5);
-        g1.connect("user-1", "src/client/images/circle_of_fifths.jpg");
-        g2.connect("user-2", "src/client/images/cat.jpg");
-        g3.connect("user-3","src/client/images/circle_of_fifths.jpg");
-        g4.connect("user-4", "src/client/images/music-circle-of-fifths.jpg");
-        g5.connect("user-5","src/client/images/circle_of_fifths.jpg");
+        g1.connect("user-6", "src/client/images/circle_of_fifths.jpg");
+        g2.connect("user-7", "src/client/images/cat.jpg");
+        g3.connect("user-8","src/client/images/circle_of_fifths.jpg");
+        g4.connect("user-9", "src/client/images/music-circle-of-fifths.jpg");
+        g2.disconnect();
+        g5.connect("user-10","src/client/images/circle_of_fifths.jpg");
+        Thread.sleep(2000);
     }
 }
