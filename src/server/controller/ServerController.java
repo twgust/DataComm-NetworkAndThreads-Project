@@ -67,6 +67,8 @@ public class ServerController implements UserConnectionCallback, MessageReceived
 
     private ServerMainThread serverMainThread;
 
+    private ServerLogger logger;
+
     // when calling a function of the reference the implementations fire
     private LoggerCallBack loggerCallback;
     private UserConnectionCallback userConnectionCallback;
@@ -76,9 +78,10 @@ public class ServerController implements UserConnectionCallback, MessageReceived
     /**
      * Constructor
      * */
-    public ServerController() {
+    public ServerController() throws IOException {
         clientBuffer = new ClientBuffer();
         userBuffer = new UserBuffer();
+        logger = new ServerLogger();
     }
 
     /**
@@ -101,8 +104,8 @@ public class ServerController implements UserConnectionCallback, MessageReceived
         messageReceivedListeners.add(listener);
     }
 
-    public void addLoggerCallbackImpl(LoggerCallBack impl) {
-        this.loggerCallback = impl;
+    public void sendLoggerCallbackImpl(LoggerCallBack impl) {
+        logger.setLoggerCallback(impl);
     }
 
     /**
@@ -125,7 +128,7 @@ public class ServerController implements UserConnectionCallback, MessageReceived
         // start Server
         serverExecutor = Executors.newSingleThreadExecutor();
         threadPool = Executors.newCachedThreadPool();
-        serverMainThread = new ServerMainThread(clientBuffer, loggerCallback, userConnectionCallback);
+        serverMainThread = new ServerMainThread(clientBuffer, logger, userConnectionCallback);
         serverExecutor.execute(serverMainThread);
     }
 
@@ -146,7 +149,13 @@ public class ServerController implements UserConnectionCallback, MessageReceived
     @Override
     public void onUserConnectListener(User connectedClient) {
         //submit one of the threads from pool to the synch method
-        threadPool.submit(()->  updateOnlineUsers(connectedClient, HandledUserType.Connected));
+        threadPool.submit(()-> {
+            try {
+                updateOnlineUsers(connectedClient, HandledUserType.Connected);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     /**
@@ -157,7 +166,13 @@ public class ServerController implements UserConnectionCallback, MessageReceived
     public void onUserDisconnectListener(User disconnectedClient) {
         //submit one of the threads from pool to the synch method
 
-        threadPool.submit(() -> updateOnlineUsers(disconnectedClient, HandledUserType.Disconnected));
+        threadPool.submit(() -> {
+            try {
+                updateOnlineUsers(disconnectedClient, HandledUserType.Disconnected);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
 
@@ -169,7 +184,11 @@ public class ServerController implements UserConnectionCallback, MessageReceived
     @Override
     public void onMessageReceived(Message message, Socket client, ObjectOutputStream oos) {
         threadPool.execute(() -> {
-            loggerCallback.logInfoToGui(Level.INFO, "message received from: " + message.getAuthor() + " [" + message.getTextMessage() + "]", LocalTime.now());
+            try {
+                logger.logEvent(Level.INFO, "message received from: " + message.getAuthor() + " [" + message.getTextMessage() + "]", LocalTime.now());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
             for (User user : message.getRecipientList()) {
                 new Sender(message, client, oos).run();
@@ -182,12 +201,12 @@ public class ServerController implements UserConnectionCallback, MessageReceived
     private void handleInterruptedException(Exception e) {
 
     }
-    private synchronized void updateOnlineUsers(User user, HandledUserType type) {
+    private synchronized void updateOnlineUsers(User user, HandledUserType type) throws IOException {
         switch (type){
             case Connected -> {
                 String logOnUserConnectMsg;
                 logOnUserConnectMsg = "adding " + user + " to list of online clients";
-                loggerCallback.logInfoToGui(Level.INFO, logOnUserConnectMsg, LocalTime.now());
+                logger.logEvent(Level.INFO, logOnUserConnectMsg, LocalTime.now());
 
                 // put the connected client in the user buffer (HashSet<User>)
                 userBuffer.put(user);
@@ -212,7 +231,7 @@ public class ServerController implements UserConnectionCallback, MessageReceived
             case Disconnected ->
             {
                 String logSocketExceptionMsg = user + " disconnected from the server";
-                loggerCallback.logInfoToGui(Level.WARNING, logSocketExceptionMsg, LocalTime.now());
+                logger.logEvent(Level.WARNING, logSocketExceptionMsg, LocalTime.now());
 
                 try {
                     userBuffer.remove(user);
@@ -292,7 +311,7 @@ public class ServerController implements UserConnectionCallback, MessageReceived
                     oos.writeObject(objectOutSet);
                     oos.reset();
                     String str = "Sent UserSet:{'<Hashset<User>' size of set = " + objectOutSet.getUserSet().size() +", User: '" + objectOutSet.getHandledUser() + "'} " + "to --> " + user + " @" + socket.getInetAddress();
-                    loggerCallback.logInfoToGui(Level.INFO, str, LocalTime.now());
+                    logger.logEvent(Level.INFO, str, LocalTime.now());
                 }
                 /**
                  * TODO
@@ -301,14 +320,18 @@ public class ServerController implements UserConnectionCallback, MessageReceived
                     oos.writeObject(message);
                     oos.reset();
                     String logMessageSentMsg = "Message sent to user: [" + user + "] @IP: " + socket.getInetAddress().toString();
-                    loggerCallback.logInfoToGui(Level.INFO, logMessageSentMsg, LocalTime.now());
+                    logger.logEvent(Level.INFO, logMessageSentMsg, LocalTime.now());
                 }
 
 
             } catch (IOException e) {
                 if (e instanceof SocketException) {
 
-                    handleIOException(e, "SendObject.run()", Thread.currentThread(), user, "");
+                    try {
+                        handleIOException(e, "SendObject.run()", Thread.currentThread(), user, "");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
             }
         }
@@ -355,7 +378,7 @@ public class ServerController implements UserConnectionCallback, MessageReceived
      * @param e      the exception to be handled
      * @param thread the thread in which the Exception occurred
      */
-    private void handleIOException(IOException e, String methodName, Thread thread, User user, String clientIP) {
+    private void handleIOException(IOException e, String methodName, Thread thread, User user, String clientIP) throws IOException {
         if (clientIP.isEmpty()) {
             clientIP = "exception occurred in unknown client";
         }
@@ -367,11 +390,11 @@ public class ServerController implements UserConnectionCallback, MessageReceived
         } else if (e instanceof EOFException) {
             // log to server gui
             String logEndOfFileMsg = "Client: EOF exception for " + user.getUsername() + " in " + methodName;
-            loggerCallback.logInfoToGui(Level.WARNING, logEndOfFileMsg, LocalTime.now());
+            logger.logEvent(Level.WARNING, logEndOfFileMsg, LocalTime.now());
         } else {
             // log to server gui
             String logUnhandledExceptionMsg = "UNHANDLED EXCEPTION\n" + e.getMessage();
-            loggerCallback.logInfoToGui(Level.WARNING, logUnhandledExceptionMsg, LocalTime.now());
+            logger.logEvent(Level.WARNING, logUnhandledExceptionMsg, LocalTime.now());
         }
     }
 

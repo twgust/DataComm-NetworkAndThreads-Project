@@ -36,7 +36,7 @@ public class ServerGUI implements LoggerCallBack {
     public ServerGUI(ServerController serverController, int width, int height) throws BadLocationException {
         setupFrame(width,height);
         this.serverController = serverController;
-        serverController.addLoggerCallbackImpl(this);
+        serverController.sendLoggerCallbackImpl(this);
         builder = new StringBuilder();
     }
     public void init(){
@@ -103,15 +103,15 @@ public class ServerGUI implements LoggerCallBack {
      * @param info string to be logged
      */
     @Override
-    public void logInfoToGui(Level level, String info, LocalTime time) {
+    public void logInfoToGui(String info, Level level) {
             SwingUtilities.invokeLater(()-> {
                 try {
                 if (level.equals(Level.WARNING)) {
-                    doc.insertString(doc.getLength(), buildString(level, info, time), style);
+                    doc.insertString(doc.getLength(), info, style);
                     // change style
                 }
                 else {
-                    doc.insertString(doc.getLength(), buildString(level, info, time), style);
+                    doc.insertString(doc.getLength(), info, style);
                 }
 
                 }

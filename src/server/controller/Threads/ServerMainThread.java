@@ -5,6 +5,7 @@ import server.Entity.Client;
 import server.controller.Buffer.ClientBuffer;
 import server.ServerInterface.LoggerCallBack;
 import server.ServerInterface.UserConnectionCallback;
+import server.controller.ServerLogger;
 
 import javax.imageio.ImageIO;
 import javax.net.SocketFactory;
@@ -20,13 +21,13 @@ import java.util.logging.Level;
  */
 public class ServerMainThread implements Runnable{
     private final ClientBuffer buffer;
-    private final LoggerCallBack loggerCallBack;
+    private final ServerLogger logger;
     private final UserConnectionCallback userConnectionCallback;
 
 
-    public ServerMainThread(ClientBuffer buffer, LoggerCallBack loggerCallBack, UserConnectionCallback userConnectionCallback){
+    public ServerMainThread(ClientBuffer buffer, ServerLogger logger, UserConnectionCallback userConnectionCallback){
         this.buffer = buffer;
-        this.loggerCallBack = loggerCallBack;
+        this.logger = logger;
         this.userConnectionCallback = userConnectionCallback;
 
     }
@@ -37,20 +38,20 @@ public class ServerMainThread implements Runnable{
             String logStartServerMsg;
             while(serverSocket == null){
                 try{
-                    int newPort = Integer.parseInt(JOptionPane.showInputDialog(null, "enter new port"));
+                    int newPort = 54752; // Integer.parseInt(JOptionPane.showInputDialog(null, "enter new port"));
                     // log to server gui
                     logStartServerMsg = "attempting to initialize server on port: [" + newPort + "]";
-                    loggerCallBack.logInfoToGui(Level.INFO, logStartServerMsg, LocalTime.now());
+                    logger.logEvent(Level.INFO, logStartServerMsg, LocalTime.now());
                     serverSocket = new ServerSocket(newPort);
 
                 }catch (BindException e){
                     logStartServerMsg = "attempt failed, port is busy";
-                    loggerCallBack.logInfoToGui(Level.WARNING, logStartServerMsg, LocalTime.now());
+                    logger.logEvent(Level.WARNING, logStartServerMsg, LocalTime.now());
                 }
             }
 
             String logServerRunningMsg = " server running on port: [" + serverSocket.getLocalPort() + "]";
-            loggerCallBack.logInfoToGui(Level.INFO, logServerRunningMsg, LocalTime.now());
+            logger.logEvent(Level.INFO, logServerRunningMsg, LocalTime.now());
 
                 // multithreaded server
                 while(true){
@@ -97,11 +98,11 @@ public class ServerMainThread implements Runnable{
                         // log to server gui
                         long end = (System.currentTimeMillis() - start);
                         String logClientTimeToConnectMsg = "finished processing client [" + clientSocket.getLocalAddress() + "] in " + end + "ms";
-                        loggerCallBack.logInfoToGui(Level.INFO, logClientTimeToConnectMsg, LocalTime.now());
+                        logger.logEvent(Level.INFO, logClientTimeToConnectMsg, LocalTime.now());
 
                         // log to server gui
                         String logUserConnectedMsg = user.getUsername() + " connected to server";
-                        loggerCallBack.logInfoToGui(Level.INFO, logUserConnectedMsg, LocalTime.now());
+                        logger.logEvent(Level.INFO, logUserConnectedMsg, LocalTime.now());
                         userConnectionCallback.onUserConnectListener(user);
                     }
                 }
