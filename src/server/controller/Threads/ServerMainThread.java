@@ -38,7 +38,7 @@ public class ServerMainThread implements Runnable{
             String logStartServerMsg;
             while(serverSocket == null){
                 try{
-                    int newPort = 54752; // Integer.parseInt(JOptionPane.showInputDialog(null, "enter new port"));
+                    int newPort =  Integer.parseInt(JOptionPane.showInputDialog(null, "enter new port"));
                     // log to server gui
                     logStartServerMsg = "attempting to initialize server on port: [" + newPort + "]";
                     logger.logEvent(Level.INFO, logStartServerMsg, LocalTime.now());
@@ -49,7 +49,7 @@ public class ServerMainThread implements Runnable{
                     logger.logEvent(Level.WARNING, logStartServerMsg, LocalTime.now());
                 }
             }
-
+            System.out.println("ok");
             String logServerRunningMsg = " server running on port: [" + serverSocket.getLocalPort() + "]";
             logger.logEvent(Level.INFO, logServerRunningMsg, LocalTime.now());
 
