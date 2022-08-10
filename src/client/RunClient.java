@@ -7,18 +7,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class RunClient {
-    public static void main(String[] args)throws InterruptedException {
+    public static void main(String[] args)  {
 
         System.out.println("MAIN - Starting clients");
         // distinguish between local clients by port number, not remote address// gui starts connection to server because a user will click connect
 
         String ip = "127.0.0.1";
-        int port = 49886;
-        ClientController c1 = new ClientController(ip, port, "CLIENT-1");
-        ClientController c2 = new ClientController(ip, port, "CLIENT-2");
-        ClientController c3 = new ClientController(ip, port, "CLIENT-3");
-        ClientController c4 = new ClientController(ip, port, "CLIENT-4");
-        ClientController c5 = new ClientController(ip, port, "CLIENT-5");
+        ClientController c1 = new ClientController(ip, 33062, "CLIENT-1");
+        ClientController c2 = new ClientController(ip, 33062, "CLIENT-2");
+        ClientController c3 = new ClientController(ip, 33062, "CLIENT-3");
+        ClientController c4 = new ClientController(ip, 33062, "CLIENT-4");
+        ClientController c5 = new ClientController(ip, 33062, "CLIENT-5");
         ClientGUI g1 = new ClientGUI(c1);
         ClientGUI g2 = new ClientGUI(c2);
         ClientGUI g3 = new ClientGUI(c3);
@@ -31,12 +30,12 @@ public class RunClient {
 
         });
         threadpool.submit(()->{
-            g2.connect("user-7", "src/client/images/cat.jpg");
+            g2.connect("user-7", "src/client/images/circle_of_fifths.jpg");
 
         });
         threadpool.submit(()->{
             g3.connect("user-8","src/client/images/circle_of_fifths.jpg");
-          //  g3.sendMessage("hellloooo im u8", MessageType.TEXT);
+            //  g3.sendMessage("hellloooo im u8", MessageType.TEXT);
 
         });
         threadpool.submit(()->{
@@ -48,7 +47,7 @@ public class RunClient {
 
         });
         threadpool.submit(()->{
-          //  g2.sendMessage("agree", MessageType.TEXT);
+            //  g2.sendMessage("agree", MessageType.TEXT);
 
         });
         try{
@@ -57,33 +56,42 @@ public class RunClient {
             e.printStackTrace();
         }
         threadpool.submit(()->{
-            g2.sendMessage("heloooo im u7", MessageType.TEXT);
+            g2.sendMessage("heloooo im u7","", MessageType.TEXT);
             //    g3.sendMessage("hellloooo im u8", MessageType.TEXT);
         });
         threadpool.submit(()->{
-            g3.sendMessage("AAA", MessageType.TEXT);
-            g3.sendMessage("AAA", MessageType.TEXT);
-            g3.sendMessage("AAA", MessageType.TEXT);
-            g3.sendMessage("AAA", MessageType.TEXT);
-            g3.sendMessage("AAA", MessageType.TEXT);
+            g3.sendMessage("AAA", "",MessageType.TEXT);
+            g3.sendMessage("AAA", "",MessageType.TEXT);
+            g3.sendMessage("AAA", "",MessageType.TEXT);
+            g3.sendMessage("AAA", "",MessageType.TEXT);
+            g3.sendMessage("AAA", "",MessageType.TEXT);
+
 
         });
         threadpool.submit(()->{
-            g4.sendMessage("BBB", MessageType.TEXT);
-            g4.sendMessage("BBB", MessageType.TEXT);
-            g4.sendMessage("BBB", MessageType.TEXT);
-            g4.sendMessage("BBB", MessageType.TEXT);
-            g4.sendMessage("BBB", MessageType.TEXT);
-
+            g4.sendMessage("BBB", "",MessageType.TEXT);
+            g4.sendMessage("BBB", "",MessageType.TEXT);
+            g4.sendMessage("BBB", "",MessageType.TEXT);
+            g4.sendMessage("BBB", "",MessageType.TEXT);
+            g4.sendMessage("BBB", "",MessageType.TEXT);
+            g4.sendMessage("BBB", "",MessageType.TEXT);
+            g4.sendMessage("BBB", "",MessageType.TEXT);
         });
         threadpool.submit(()->{
-            g5.sendMessage("CCC", MessageType.TEXT);
-            g5.sendMessage("CCC", MessageType.TEXT);
-            g5.sendMessage("CCC", MessageType.TEXT);
-            g5.sendMessage("CCC", MessageType.TEXT);
-            g5.sendMessage("CCC", MessageType.TEXT);
-            g5.sendMessage("CCC", MessageType.TEXT);
-
+            g5.sendMessage("CCC", null,MessageType.TEXT);
+            g5.sendMessage("CCC", null,MessageType.TEXT);
+            g5.sendMessage("CCC", null,MessageType.TEXT);
+            g5.sendMessage("CCC", null,MessageType.TEXT);
+            g5.sendMessage("CCC", null,MessageType.TEXT);
+            g5.sendMessage("CCC", null,MessageType.TEXT);
+        });
+        threadpool.submit(()->{
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            g1.sendMessage("image message!!","src/client/images/cat.jpg",MessageType.TEXT_IMAGE );
         });
     }
 

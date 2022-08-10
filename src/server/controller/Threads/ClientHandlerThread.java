@@ -2,8 +2,7 @@ package server.controller.Threads;
 
 import server.Entity.Client;
 import server.ServerInterface.MessageReceivedEvent;
-import server.controller.Buffer.MessageBuffer;
-import server.controller.Buffer.SendablesBuffer;
+
 import server.controller.ServerLogger;
 
 import java.time.LocalTime;
@@ -22,19 +21,17 @@ import java.util.logging.Level;
  */
 public class ClientHandlerThread {
     private final ThreadAssigner clientHandlerThread;
-    private final MessageBuffer messageBuffer;
     private final LinkedList<Client> queue;
     private final ServerLogger logger;
 
     private ThreadPoolExecutor clientHandlerMainExec;
     private ThreadPoolExecutor clientHandlerThreadPool;
 
-    private MessageReceivedEvent messageReceivedEvent;
+    private final MessageReceivedEvent messageReceivedEvent;
 
 
-    public ClientHandlerThread(ServerLogger logger , MessageBuffer messageBuffer, MessageReceivedEvent event){
+    public ClientHandlerThread(ServerLogger logger, MessageReceivedEvent event){
         this.logger = logger;
-        this.messageBuffer = messageBuffer;
         this.messageReceivedEvent = event;
 
         queue = new LinkedList<>();
@@ -96,7 +93,7 @@ public class ClientHandlerThread {
 
                     // debug
                     // assign a thread to the client which will listen to incoming messages
-                    MessageReceiverThread receiver = new MessageReceiverThread(client, logger, messageBuffer);
+                    MessageReceiverThread receiver = new MessageReceiverThread(client, logger);
                     clientHandlerThreadPool.submit(receiver);
                     receiver.addListener(messageReceivedEvent);
 

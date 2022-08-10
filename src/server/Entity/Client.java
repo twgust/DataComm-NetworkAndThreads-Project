@@ -23,7 +23,7 @@ public class Client {
         this.ois = ois;
     }
 
-    private Socket socket;
-    private ObjectOutputStream oos;
-    private ObjectInputStream ois;
+    private final Socket socket;
+    private final ObjectOutputStream oos;
+    private final ObjectInputStream ois;
 }

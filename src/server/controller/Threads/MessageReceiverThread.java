@@ -3,7 +3,6 @@ package server.controller.Threads;
 import entity.Message;
 import server.Entity.Client;
 import server.ServerInterface.MessageReceivedEvent;
-import server.controller.Buffer.MessageBuffer;
 import server.controller.ServerLogger;
 
 import java.io.IOException;
@@ -16,9 +15,7 @@ import java.util.logging.Level;
  * Threads are never freed unless clients disconnect
  */
 public class MessageReceiverThread implements Runnable {
-    private final Client client;
     private MessageReceivedEvent listener;
-    private final MessageBuffer buffer;
     private final ServerLogger logger;
     private final String ip;
     private final ObjectInputStream ois;
@@ -27,10 +24,8 @@ public class MessageReceiverThread implements Runnable {
      * @param client Client which is assigned the thread
      * @param logger logger for gui and .txt file
      */
-    public MessageReceiverThread(Client client, ServerLogger logger, MessageBuffer buffer) {
-        this.client = client;
+    public MessageReceiverThread(Client client, ServerLogger logger ) {
         this.logger = logger;
-        this.buffer = buffer;
         ip = client.getSocket().getRemoteSocketAddress().toString();
         ois = client.getOis();
     }

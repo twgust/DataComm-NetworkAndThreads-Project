@@ -151,18 +151,18 @@ public class ClientController {
 
         FutureTask<String> connectTask = new FutureTask<>(connect, "good");
         threadPool.submit(connectTask);
-            // connectTask.get() returns "good" if executed without throwing exceptions
-            try{
-                if (connectTask.get().equals("good")) {
-                    connectionHandler.connectionOpenedCallback
-                            ("Success established connection to: " + clientSocket.getInetAddress().toString(), user);
-                    threadPool.execute(new ResponseHandler());
-                    threadPool.execute(new ReceiveMessage());
+        // connectTask.get() returns "good" if executed without throwing exceptions
+        try{
+            if (connectTask.get().equals("good")) {
+                connectionHandler.connectionOpenedCallback
+                        ("Success established connection to: " + clientSocket.getInetAddress().toString(), user);
+                threadPool.execute(new ResponseHandler());
+                threadPool.execute(new ReceiveMessage());
 
-                }
-            }catch (InterruptedException | ExecutionException e){
-                e.printStackTrace();
             }
+        }catch (InterruptedException | ExecutionException e){
+            e.printStackTrace();
+        }
 
 
     }
@@ -188,33 +188,22 @@ public class ClientController {
         System.out.println("disconnect");
         threadPool.submit(new ClientDisconnect());
     }
-
-    /**
-     * TODO - WIP
-     * method overloading for send chat msg functions,
-     * since a Message can contain: Text OR Image OR Text AND Image
-     *
-     * @param message String, any alphanumeric + special character
-     * @param icon    Image, jpg. TODO implement png functionality
-     */
-    public void sendChatMsg(String message, ImageIcon icon, ArrayList<User> recipients) {
-        // consider storing messages in some data struct.
-        // user == client == author of message.
-        if (user != null) {
-            Message imageTextMsg = new Message(message, icon, user, recipients, MessageType.TEXT_IMAGE);
-
-            //todo will probably implement future object,
-            // so a client can't send another message before the first
-            // has successfully been written to ObjectOutputStream
-        //    sendMessageExecutor.execute(new SendMessage(imageTextMsg, clientSocket));
-        }
+    private synchronized byte[] pathToByteArr(String path) throws IOException{
+        BufferedImage bufferedImage = ImageIO.read(new File(path));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(bufferedImage, "jpg", baos);
+        baos.flush();
+        byte[] imageInByteArr = baos.toByteArray();
+        baos.close();
+        return imageInByteArr;
     }
+
 
     /**
      * Sends a text only Message to server, see Message class for more details.
      * @param message chat message only containing text
      */
-    public synchronized void sendChatMsg(String message, Object[] recipients, MessageType msgType) {
+    public synchronized void sendChatMsg(String message, Object[] recipients, MessageType msgType) throws IOException {
         assert (user != null);
         ArrayList<User> recipientList = new ArrayList<>();
 
@@ -225,36 +214,75 @@ public class ClientController {
         }
         //recipientList.remove(user);
         //hardcoded test solution until gui is in place
-
-        switch (msgType){
-            case TEXT -> {
-                Message message1 = new Message(message, user,recipientList,msgType);
-                SendMessage sendMessage1 = new SendMessage(message1, clientSocket);
-                FutureTask<String> await = new FutureTask<>(sendMessage1,"result");
-                System.out.println("attempting to send message");
-                threadPool.submit(await);
-                while(true) {
-                    try {
-                        if (await.get().equals("result")){
-                            //notify gui
-                            System.out.println("message sent");return;}
-                    }
-                    catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
+        Message message1 = new Message(message, user,recipientList,msgType);
+        SendMessage sendMessage1 = new SendMessage(message1, clientSocket);
+        FutureTask<String> await = new FutureTask<>(sendMessage1,"result");
+        System.out.println("attempting to send message");
+        threadPool.submit(await);
+        while(true) {
+            try {
+                if (await.get().equals("result")){
+                    //notify gui
+                    System.out.println("message sent");
+                    return;
                 }
-
             }
-            case IMAGE -> System.out.println("todo" );
-            case TEXT_IMAGE -> System.out.println("todo");
+            catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
+        }
+    }  public synchronized void sendChatMsg(Object[] recipients, MessageType msgType, String path) throws IOException {
+        assert (user != null);
+        ArrayList<User> recipientList = new ArrayList<>();
 
+        for (Object o:recipients) {
+            if(o instanceof User){
+                recipientList.add((User)o);
+            }
+        }
+
+        byte[] imgInByteArr = pathToByteArr(path);
+
+        //hardcoded test solution until gui is in place
+        Message message = new Message(imgInByteArr,user,recipientList,msgType);
+        SendMessage sendMessage1 = new SendMessage(message, clientSocket);
+        FutureTask<String> await = new FutureTask<>(sendMessage1,"result");
+        System.out.println("attempting to send message");
+        threadPool.submit(await);
+        while(true) {
+            try {
+                if (await.get().equals("result")){
+                    //notify gui
+                    System.out.println("message sent");
+                    return;
+                }
+            }
+            catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
         }
     }
 
-    /**
-     * Sends an image only Message to server, see Message class for more detail
-     * @param icon chat message only containing an image
-     */
-    public void sendChatMsg(ImageIcon icon) {
+    public synchronized void sendChatMsg(String message, Object[] recipients, MessageType msgType, String path) throws IOException {
+        assert (user != null);
+        ArrayList<User> recipientList = new ArrayList<>();
 
+        for (Object o:recipients) {
+            if(o instanceof User){
+                recipientList.add((User)o);
+            }
+        }
+
+        byte[] imgInByteArr = pathToByteArr(path);
+        Message message1 = new Message(message, imgInByteArr,user,recipientList,msgType);
+        SendMessage sendMessage1 = new SendMessage(message1, clientSocket);
+        FutureTask<String> await = new FutureTask<>(sendMessage1,"result");
+        threadPool.submit(await);
+        while(true) {
+            try {
+                if (await.get().equals("result")){
+                    System.out.println("message sent");
+                    return;
+                }
+            }
+            catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
+        }
     }
 
     /**
@@ -308,6 +336,22 @@ public class ClientController {
     }
 
     /**
+     * Fires the implementation which corresponds to the type of (Message) Object o.
+     * @param o takes in a message object from OOS,
+     */
+    private void handleMessageResponse(Object o) {
+        Message message = (Message) o;
+        switch (message.getType()) {
+            case TEXT -> {
+                msgReceivedHandler.textMessageReceived(message, LocalTime.now());
+                System.out.println("Received text message, passing information to gui");
+            }
+            case IMAGE -> msgReceivedHandler.imageMessageReceived(message, LocalTime.now());
+            case TEXT_IMAGE -> msgReceivedHandler.txtAndImgMessageReceived(message, LocalTime.now());
+        }
+    }
+
+    /**
      * takes in an object, casts it to a UserSet obj,
      * fetches Set from UserSet obj, iterates over the set and
      * adds elements to hashset.
@@ -323,22 +367,6 @@ public class ClientController {
             else if (u.getUserType().equals(ConnectionEventType.Disconnected)){
                 set.remove(u.getHandledUser());
             }
-        }
-    }
-
-    /**
-     * Fires the implementation which corresponds to the type of (Message) Object o.
-     * @param o takes in a message object from OOS,
-     */
-    private void handleMessageResponse(Object o) {
-        Message message = (Message) o;
-        switch (message.getType()) {
-            case TEXT -> {
-                msgReceivedHandler.textMessageReceived(message, LocalTime.now());
-                System.out.println("Received text message, passing information to gui");
-            }
-            case IMAGE -> msgReceivedHandler.imageMessageReceived(message, LocalTime.now());
-            case TEXT_IMAGE -> msgReceivedHandler.txtAndImgMessageReceived(message, LocalTime.now());
         }
     }
 
@@ -420,6 +448,7 @@ public class ClientController {
                 System.out.println(clientSocket.getLocalPort());
 
             } catch (IOException e) {
+                e.printStackTrace();
                 exceptionHandler(e, Thread.currentThread(), "failed to connect");
             }
 

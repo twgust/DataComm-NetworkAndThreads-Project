@@ -124,10 +124,10 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
      */
     public void startServer()  {
         registerCallbackListeners();
-        openServerConnection = new OpenServerConnection(logger, clientBuffer, userConnectionEvent);
-        clientHandler = new ClientHandlerThread(logger, messageBuffer, messageReceivedEvent);
         objectSenderThread = new ObjectSenderThread(logger, sendablesBuffer,clientBuffer, userBuffer, messageBuffer);
+        openServerConnection = new OpenServerConnection(logger, clientBuffer, userConnectionEvent);
         userSetProducer  = new UserSetProducer(userBuffer,userSetProducedEvent);
+        clientHandler = new ClientHandlerThread(logger, messageReceivedEvent);
 
         configureExecutors();
 
@@ -181,7 +181,6 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
             masterThreadPool.submit(() -> userSetProducer.queueUserSetProduction(user, ConnectionEventType.Connected));
             masterThreadPool.submit(() -> clientHandler.queueClientForProcessing(clientBuffer.get(user)));
         }
-
     }
 
     /**
@@ -244,16 +243,6 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
             // log to server gui
             String logUnhandledExceptionMsg = "UNHANDLED EXCEPTION\n" + e.getMessage();
             logger.logEvent(Level.WARNING, logUnhandledExceptionMsg, LocalTime.now());
-        }
-    }
-
-    /**
-     * Runnable for closing the server
-     */
-    private class ServerDisconnect implements Runnable {
-        @Override
-        public void run() {
-
         }
     }
 }

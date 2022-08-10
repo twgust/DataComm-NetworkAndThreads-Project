@@ -7,8 +7,12 @@ import entity.Message;
 import entity.MessageType;
 import entity.User;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -61,7 +65,7 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
      * @param message string fetched from textfield
      * @param msgType hardcoded for testing, solving in gui later
      */
-    public void sendMessage(String message, MessageType msgType){
+    public void sendMessage(String message,String path ,MessageType msgType){
         if(listModel.isEmpty()){
             System.out.println("U haven't selected any recipients!");
             return;
@@ -74,20 +78,22 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
             // the type of message, also selected in gui
             MessageType type = msgType;
             switch (type){
-                case TEXT -> clientController.sendChatMsg(message, objects,  msgType);
-                case IMAGE -> System.out.println("img");
-                case TEXT_IMAGE -> System.out.println("textImg");
+                case TEXT -> {
+                    try {
+                        clientController.sendChatMsg(message, objects,  msgType);
+                    } catch (IOException e) { e.printStackTrace(); }
+                }
+                case IMAGE -> {
+                    try {
+                        clientController.sendChatMsg(objects,msgType,path);
+                    } catch (IOException e) { e.printStackTrace(); }
+                }
+                case TEXT_IMAGE -> {
+                    try {
+                        clientController.sendChatMsg(message,objects,msgType, path);
+                    } catch (IOException e) { System.out.println(e);}
+                }
             }});
-
-    }
-
-
-
-    /**
-     *
-     */
-    private void loadImg(){
-        clientController.loadImgFromPath("/images/circle_of_fifths.jpg");
     }
 
     /**
@@ -146,6 +152,8 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
      */
     @Override
     public void imageMessageReceived(Message message, LocalTime timeNow) {
+        ImageIcon img = byteArrToImageIcon(message.getImage());
+        User author = message.getAuthor();
 
     }
     /**
@@ -153,7 +161,27 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
      */
     @Override
     public void txtAndImgMessageReceived(Message message, LocalTime timeNow) {
+        SwingUtilities.invokeLater(()->{
+            ImageIcon img = byteArrToImageIcon(message.getImage());
+            String text = message.getTextMessage();
+            User author = message.getAuthor();
+            JOptionPane.showMessageDialog(null, img);
 
+        });
+    }
+    private ImageIcon byteArrToImageIcon(byte[] img){
+
+        try{
+            System.out.println("asd");
+            ByteArrayInputStream bais = new ByteArrayInputStream(img);
+            BufferedImage bufferedImage = ImageIO.read(bais);
+            return new ImageIcon(bufferedImage);
+
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     /**

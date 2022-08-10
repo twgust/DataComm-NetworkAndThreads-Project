@@ -28,14 +28,14 @@ import java.util.ArrayList;
  */
 public class Message extends Sendables  {
     private String textMessage;
-    private ImageIcon image;
+    private byte[] image;
     private final User author;
     private final ArrayList<User> recipientList;
     private final MessageType type;
 
-    public Message(String textMessage, ImageIcon imageIcon, User author, ArrayList<User> recipients, MessageType type) {
+    public Message(String textMessage, byte[] image, User author, ArrayList<User> recipients, MessageType type) {
         this.textMessage = textMessage;
-        this.image = imageIcon;
+        this.image = image;
         this.author = author;
         this.recipientList = recipients;
         this.type = type;
@@ -67,13 +67,13 @@ public class Message extends Sendables  {
 
     /**
      *
-     * @param imageIcon
+     * @param image
      * @param author
      * @param recipients
      * @param type
      */
-    public Message(ImageIcon imageIcon, User author, ArrayList<User> recipients, MessageType type) {
-        this.image = imageIcon;
+    public Message(byte[] image, User author, ArrayList<User> recipients, MessageType type) {
+        this.image = image;
         this.author = author;
         this.recipientList = recipients;
         this.type = type;
@@ -83,7 +83,7 @@ public class Message extends Sendables  {
      *
      * @return
      */
-    public ImageIcon getImage() {
+    public byte[] getImage() {
         if (this.image != null) {
             return this.image;
         }

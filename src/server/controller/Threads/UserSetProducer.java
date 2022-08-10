@@ -19,10 +19,8 @@ public class UserSetProducer{
     private final ExecutorService service;
     private final ProducerRunnable producer;
 
-    private User user;
     private Queue<User> queue;
-
-    private UserSetProducedEvent userSetProducedEvent;
+    private final UserSetProducedEvent userSetProducedEvent;
 
     public UserSetProducer(UserBuffer userBuffer, UserSetProducedEvent event){
         this.userBuffer = userBuffer;
@@ -31,9 +29,6 @@ public class UserSetProducer{
         service = Executors.newSingleThreadExecutor();
 
 
-    }
-    public void addListener(UserSetProducedEvent listener){
-        this.userSetProducedEvent = listener;
     }
     public synchronized void queueUserSetProduction(User user, ConnectionEventType type){
         queue.add(user);
@@ -71,5 +66,4 @@ public class UserSetProducer{
             }
         }
     }
-
 }
