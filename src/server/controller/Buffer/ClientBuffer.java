@@ -41,9 +41,14 @@ public class ClientBuffer {
      * @return returns value for K: user
      * @throws InterruptedException if wait() is interrupted exception is thrown
      */
-    public synchronized Client get(User user) throws InterruptedException{
+    public synchronized Client get(User user){
         if(clientBuffer.isEmpty()){
-            wait();
+            try{
+                wait();
+            }catch (InterruptedException e){
+                e.printStackTrace();
+            }
+
         }
         return clientBuffer.get(user);
     }
@@ -56,6 +61,9 @@ public class ClientBuffer {
     public synchronized void removeUser(User user) throws InterruptedException{
         if(clientBuffer.isEmpty()){
             wait();
+            if(Thread.interrupted()){
+                throw new InterruptedException();
+            }
         }
         clientBuffer.remove(user);
     }

@@ -51,6 +51,11 @@ public class ServerGUI implements LoggerCallBack {
      * @param height height
      */
     private void setupFrame(int width, int height) throws BadLocationException {
+        UIDefaults uiDefaults = UIManager.getDefaults();
+        uiDefaults.put("activeCaption", new javax.swing.plaf.ColorUIResource(Color.gray));
+        uiDefaults.put("activeCaptionText", new javax.swing.plaf.ColorUIResource(Color.white));
+        JFrame.setDefaultLookAndFeelDecorated(true);
+
         frame = new JFrame();
         int minWidth = 850;
         int minHeight = 500;
@@ -60,33 +65,27 @@ public class ServerGUI implements LoggerCallBack {
                 height = minHeight;
             }
         }
-        //Todo impl
-        Container container = frame.getContentPane();
-        JPanel panel = new JPanel();
-
         textPane = new JTextPane();
         textPane.setBackground(Color.BLACK);
         set = new SimpleAttributeSet();
         StyleConstants.setItalic(set, true);
         textPane.setCharacterAttributes(set, true);
-
-        Font font = new Font("Verdana", Font.BOLD, 12);
         doc = (StyledDocument) textPane.getDocument();
         style = doc.addStyle("StyleName", null);
         StyleConstants.setForeground(style, Color.CYAN);
         StyleConstants.setBold(style, true);
 
         textPane.setBorder(BorderFactory.createMatteBorder(2,2,2,2,Color.CYAN));
-        frame.add(new JScrollPane(textPane));
-
-
-
-        //    textArea = new JTextArea();
+        JScrollPane scrollPane1 = new JScrollPane(textPane);
+        scrollPane1.setForeground(Color.CYAN);
+        scrollPane1.setBorder(BorderFactory.createMatteBorder(3,3,3,3,Color.GREEN));
+        frame.add(scrollPane1);
+        // textArea = new JTextArea();
         frame.setLocation(750,400);
         frame.setSize(800, 400);
         frame.setResizable(false);
         frame.setVisible(true);
-       // frame.add(textArea);
+        // frame.add(textArea);
     }
     private String buildString(Level level, String info, LocalTime time){
         builder = new StringBuilder();
@@ -108,7 +107,6 @@ public class ServerGUI implements LoggerCallBack {
                 try {
                 if (level.equals(Level.WARNING)) {
                     doc.insertString(doc.getLength(), info, style);
-                    // change style
                 }
                 else {
                     doc.insertString(doc.getLength(), info, style);

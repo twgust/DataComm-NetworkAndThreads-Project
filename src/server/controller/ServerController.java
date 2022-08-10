@@ -1,25 +1,21 @@
 package server.controller;
 
-import entity.HandledUserType;
-import entity.Message;
-import entity.User;
-import entity.UserSet;
-import server.Entity.Client;
-import server.ServerInterface.LoggerCallBack;
-import server.ServerInterface.MessageReceivedListener;
-import server.ServerInterface.UserConnectionCallback;
+import entity.*;
+import server.ServerInterface.*;
 import server.controller.Buffer.ClientBuffer;
+import server.controller.Buffer.MessageBuffer;
+import server.controller.Buffer.SendablesBuffer;
 import server.controller.Buffer.UserBuffer;
-import server.controller.Threads.ServerMainThread;
+import server.controller.Threads.ClientHandlerThread;
+import server.controller.Threads.Sender.ObjectSenderThread;
+import server.controller.Threads.OpenServerConnection;
+import server.controller.Threads.UserSetProducer;
 
 import java.io.*;
-import java.net.Socket;
 import java.net.SocketException;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 
@@ -46,331 +42,184 @@ import java.util.logging.Level;
  * 3.1 Operations on the Data Structure need be Synchronized [X]
  * <p>
  * <p>
- * 4, Store a Messages that can't be sent in some Data Structure []
- * 4.1 Operations on the Data Structure need be Synchronized []
+ * 4, Store a Messages that can't be sent in some Data Structure [x]
+ * 4.1 Operations on the Data Structure need be Synchronized [x]
  * 4.2 On Client reconnect, send the stored Message []
  * <p>
- * 5, Log all traffic on the server to a locally stored File []
+ * 5, Log all traffic on the server to a locally stored File [x]
  * 5.1 Display all traffic on the server through a Server GUI (ServerView) [x] Partial
  * ----------------------------------------------------------------------------*
  */
 
-public class ServerController implements UserConnectionCallback, MessageReceivedListener {
-
-    // server
+public class ServerController implements UserConnectionEvent, MessageReceivedEvent, UserSetProducedEvent {
+    // Buffers
+    private final SendablesBuffer sendablesBuffer;
+    private final MessageBuffer messageBuffer;
     private final ClientBuffer clientBuffer;
     private final UserBuffer userBuffer;
-
+    private final ServerLogger logger;
     // server threads
-    private ExecutorService threadPool;
-    private ExecutorService serverExecutor;
+    private OpenServerConnection openServerConnection;
+    private ObjectSenderThread objectSenderThread;
+    private ClientHandlerThread clientHandler;
+    private UserSetProducer userSetProducer;
 
-    private ServerMainThread serverMainThread;
-
-    private ServerLogger logger;
-
+    // executors for threads & runnables
+    private ThreadPoolExecutor clientHandlerSingleThread;
+    private ThreadPoolExecutor masterThreadPool;
+    private ThreadPoolExecutor clientHandlerPool;
+    private ThreadPoolExecutor objectSenderPool;
+    private ThreadPoolExecutor server;
     // when calling a function of the reference the implementations fire
-    private LoggerCallBack loggerCallback;
-    private UserConnectionCallback userConnectionCallback;
-    private MessageReceivedListener messageReceivedCallback;
-    private ArrayList<MessageReceivedListener> messageReceivedListeners;
+
+
+    private UserConnectionEvent userConnectionEvent;
+    private UserSetProducedEvent userSetProducedEvent;
+    private MessageReceivedEvent messageReceivedEvent;
 
     /**
      * Constructor
-     * */
+     */
     public ServerController() throws IOException {
+        sendablesBuffer = new SendablesBuffer();
+        messageBuffer = new MessageBuffer();
         clientBuffer = new ClientBuffer();
         userBuffer = new UserBuffer();
         logger = new ServerLogger();
     }
 
+    public void addMessageReceivedListener(MessageReceivedEvent messageReceivedEvent) {
+        this.messageReceivedEvent = messageReceivedEvent;
+    }
     /**
-     * List of implementations so ServerGUI and ServerController can provide their own impl.
-     *
-     * @param connectionListener implementation of UserConnectionCallBack Interface
+     * @param userConnectionEvent implementation of UserConnectionCallBack Interface
      */
-    public void addConnectionListener(UserConnectionCallback connectionListener) {
-        this.userConnectionCallback = connectionListener;
+    public void addConnectionListener(UserConnectionEvent userConnectionEvent) {
+        this.userConnectionEvent = userConnectionEvent;
+    }
+    public void addProducerListener(UserSetProducedEvent userSetProduced){
+        this.userSetProducedEvent = userSetProduced;
     }
 
-    public void addMessageReceivedListener(MessageReceivedListener messageListener) {
-        this.messageReceivedCallback = messageListener;
-    }
-
-    public void addMessageReceivedListenerThread(MessageReceivedListener listener) {
-        if (messageReceivedListeners == null) {
-            messageReceivedListeners = new ArrayList<>();
-        }
-        messageReceivedListeners.add(listener);
-    }
-
+    /**
+     * @param impl
+     */
     public void sendLoggerCallbackImpl(LoggerCallBack impl) {
         logger.setLoggerCallback(impl);
     }
+
 
     /**
      * should more callback listeners be implemented
      */
     private void registerCallbackListeners() {
-        addConnectionListener(this);
         addMessageReceivedListener(this);
+        addConnectionListener(this);
+        addProducerListener(this);
     }
 
     /**
-     * Starts and initializes server,
+     * Initializes required components and starts server
      * invoked by ServerGUI.
      */
-    public void startServer() {
+    public void startServer()  {
         registerCallbackListeners();
+        openServerConnection = new OpenServerConnection(logger, clientBuffer, userConnectionEvent);
+        clientHandler = new ClientHandlerThread(logger, messageBuffer, messageReceivedEvent);
+        objectSenderThread = new ObjectSenderThread(logger, sendablesBuffer,clientBuffer, userBuffer, messageBuffer);
+        userSetProducer  = new UserSetProducer(userBuffer,userSetProducedEvent);
+
+        configureExecutors();
 
 
-
-        // start Server
-        serverExecutor = Executors.newSingleThreadExecutor();
-        threadPool = Executors.newCachedThreadPool();
-        serverMainThread = new ServerMainThread(clientBuffer, logger, userConnectionCallback);
-        serverExecutor.execute(serverMainThread);
+        openServerConnection.startServer();
+        clientHandler.start();
+        userSetProducer.start();
+        objectSenderThread.start();
     }
 
     /**
-     * Closes servers and all client connections,
-     * invoked by ServerGUI.
+     * sets up executors which will run the different modules in the server
      */
-    public void stopServer() {
-        ServerDisconnect disconnect = new ServerDisconnect();
+    private void configureExecutors() {
+        masterThreadPool = createThreadPool("ThreadPool - MASTER", 0,10,new SynchronousQueue<>());
+
+
+        server = createThreadPool("ServerThread - Main", 1, 1, new LinkedBlockingQueue<>());
+        openServerConnection.setSingleThreadExecutor(server);
+
+        clientHandlerSingleThread = createThreadPool("SingleThread - ClientHandlerMain", 1, 1, new LinkedBlockingQueue<>());
+        clientHandler.setSingleThreadExecutor(clientHandlerSingleThread);
+
+        clientHandlerPool = createThreadPool("ThreadPool - ClientHandler", 0, 25, new SynchronousQueue<>());
+        clientHandler.setThreadPoolExecutor(clientHandlerPool);
+
+        objectSenderPool = createThreadPool("ThreadPool - ObjectSender", 0, 25, new SynchronousQueue<>());
+        objectSenderThread.setThreadPoolExecutor(objectSenderPool);
+
+    }
+
+    public ThreadPoolExecutor createThreadPool(String name, int corePoolSize, int max, BlockingQueue<Runnable> queue) {
+        return new ThreadPoolExecutor(corePoolSize, max, 60, TimeUnit.SECONDS, queue, new ThreadFactory() {
+            final AtomicInteger integer = new AtomicInteger();
+
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, name + "[t=" + integer.getAndIncrement() + "]");
+            }
+        });
     }
 
     /**
      * Implementation of the UserConnectionCallback interface,
      * fires on successful client connection
      * Every connected client is updated when fired.
-     * @param connectedClient connected Client
      */
     @Override
-    public void onUserConnectListener(User connectedClient) {
-        //submit one of the threads from pool to the synch method
-        threadPool.submit(()-> {
-            try {
-                updateOnlineUsers(connectedClient, HandledUserType.Connected);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+    public void onUserConnectListener(User user) {
+        synchronized (this){
+            masterThreadPool.submit(() -> userSetProducer.queueUserSetProduction(user, ConnectionEventType.Connected));
+            masterThreadPool.submit(() -> clientHandler.queueClientForProcessing(clientBuffer.get(user)));
+        }
+
     }
 
     /**
-     * TODO fix this
      * @param disconnectedClient the client whose socket was closed.
      */
     @Override
     public void onUserDisconnectListener(User disconnectedClient) {
-        //submit one of the threads from pool to the synch method
+        synchronized (this) {
 
-        threadPool.submit(() -> {
-            try {
-                updateOnlineUsers(disconnectedClient, HandledUserType.Disconnected);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        }
     }
 
-
-    /**
-     * @param message
-     * @param client
-     * @param oos
-     */
     @Override
-    public void onMessageReceived(Message message, Socket client, ObjectOutputStream oos) {
-        threadPool.execute(() -> {
-            try {
-                logger.logEvent(Level.INFO, "message received from: " + message.getAuthor() + " [" + message.getTextMessage() + "]", LocalTime.now());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            for (User user : message.getRecipientList()) {
-                new Sender(message, client, oos).run();
-            }
-        });
-
-
-    }
-
-    private void handleInterruptedException(Exception e) {
-
-    }
-    private synchronized void updateOnlineUsers(User user, HandledUserType type) throws IOException {
-        switch (type){
-            case Connected -> {
-                String logOnUserConnectMsg;
-                logOnUserConnectMsg = "adding " + user + " to list of online clients";
-                logger.logEvent(Level.INFO, logOnUserConnectMsg, LocalTime.now());
-
-                // put the connected client in the user buffer (HashSet<User>)
-                userBuffer.put(user);
-
-                // fetch the userHashSet, userBuffer is synchronized and thread-safe
-                HashSet<User> userHashSet = userBuffer.getUserBuffer();
-
-                // for each connected client,
-                // send an instance of the  UserSet Class (<HashSet<User> set, User connectedClient);
-                clientBuffer.getKeySet().parallelStream().forEach(u -> {
+    public void userSetProduced(UserSet userSet) {
+        synchronized (this) {
+                masterThreadPool.submit(()-> {
                     try {
-                        // for each user in buffer, update their "online list"
-                        // Runnable still runs on thread assigned at start of func pool.
-                        new Sender(new UserSet(userHashSet, user, HandledUserType.Connected),
-                                u, clientBuffer.get(u).getSocket(), clientBuffer.get(u).getOos()).run();
+                        sendablesBuffer.enqueueSendable(userSet);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 });
-            }
-
-            case Disconnected ->
-            {
-                String logSocketExceptionMsg = user + " disconnected from the server";
-                logger.logEvent(Level.WARNING, logSocketExceptionMsg, LocalTime.now());
-
-                try {
-                    userBuffer.remove(user);
-                    clientBuffer.removeUser(user);
-                }
-                catch (Exception e) {e.printStackTrace();}
-                HashSet<User> userHashSet = userBuffer.getUserBuffer();
-
-                clientBuffer.getKeySet().parallelStream().forEach((u -> {
-                    try{
-                        Client client = clientBuffer.get(u);
-                        new Sender(new UserSet(userHashSet, user, HandledUserType.Disconnected), u,
-                                client.getSocket(), client.getOos()).run();}
-                    catch (InterruptedException e) {e.printStackTrace();}
-                }
-
-                ));
-
-
-            }
         }
     }
 
-    /**
-     * Runnable for sending a message to a Client,
-     * Writes to connected clients ObjectOutputStream
-     */
-    private class Sender implements Runnable {
-        // update lists
-        private UserSet objectOutSet;
-        private User user; // recipient of message
-
-        //send message
-        private Message message;
-
-        // socket and stream to send to
-        private final Socket socket;
-        private final ObjectOutputStream oos;
-
-
-        /**
-         * Constructor for sending messages to clients
-         *
-         * @param message message to be sent
-         * @param socket  client which sent the request to server
-         */
-        public Sender(Message message, Socket socket, ObjectOutputStream oos) {
-            this.message = message;
-            this.socket = socket;
-            this.oos = oos;
-        }
-
-        /**
-         * Updates list of currently online users
-         *
-         * @param userSet the set of users + the recent disconnect/connected user as an obj
-         * @param user    the user of the user which the update is going to be sent to,
-         */
-        public Sender(UserSet userSet, User user, Socket socket, ObjectOutputStream oos) {
-            this.socket = socket;
-            this.oos = oos;
-            this.user = user;
-            this.objectOutSet = userSet;
-        }
-
-        @Override
-        public void run() {
+    @Override
+    public void onMessageReceivedEvent(Message message) {
+        synchronized (this) {
             try {
+                sendablesBuffer.enqueueSendable(message);
 
-                // 1)
-                // the Client will receive a "UserSet" which includes:
-                // a HashSet<User> of online users
-                // a User object which represents the disconnected/Connected client in the UserConnectionInterface
-                if (this.objectOutSet != null) {
-
-
-                    oos.writeObject(objectOutSet);
-                    oos.reset();
-                    String str = "Sent UserSet:{'<Hashset<User>' size of set = " + objectOutSet.getUserSet().size() +", User: '" + objectOutSet.getHandledUser() + "'} " + "to --> " + user + " @" + socket.getInetAddress();
-                    logger.logEvent(Level.INFO, str, LocalTime.now());
-                }
-                /**
-                 * TODO
-                 */
-                else if (this.message != null) {
-                    oos.writeObject(message);
-                    oos.reset();
-                    String logMessageSentMsg = "Message sent to user: [" + user + "] @IP: " + socket.getInetAddress().toString();
-                    logger.logEvent(Level.INFO, logMessageSentMsg, LocalTime.now());
-                }
-
-
-            } catch (IOException e) {
-                if (e instanceof SocketException) {
-
-                    try {
-                        handleIOException(e, "SendObject.run()", Thread.currentThread(), user, "");
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
 
-    /**
-     * Runnable for receiving a message from a client
-     * Reads from connected clients ObjectInputStream.
-     */
-    private class ReceiveMessage implements Runnable {
-        private final Client client;
 
-        public ReceiveMessage(Client client) {
-            this.client = client;
-        }
-
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    ObjectInputStream ois = client.getOis();
-                    Object o = ois.readObject();
-                    if (o instanceof Message) {
-                        Message message = (Message) o;
-                        messageReceivedCallback.onMessageReceived(message, client.getSocket(), client.getOos());
-                    }
-
-                    Thread.sleep(250);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }
-    }
     /**
      * WIP
      * Function for handling Socket exceptions
@@ -386,7 +235,7 @@ public class ServerController implements UserConnectionCallback, MessageReceived
             // assume user disconnect, at any rate the SocketException has the effect of a disconnected user
             // log to server gui
 
-            onUserDisconnectListener(user);
+            // onUserDisconnectListener(user, ); fix this
         } else if (e instanceof EOFException) {
             // log to server gui
             String logEndOfFileMsg = "Client: EOF exception for " + user.getUsername() + " in " + methodName;

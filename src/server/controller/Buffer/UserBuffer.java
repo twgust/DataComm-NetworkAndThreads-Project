@@ -18,17 +18,13 @@ public class UserBuffer {
         this.user = user;
         notify();
     }
-    public synchronized void addSet(Set<User> userSet, User user){
-        onlineBuffer.addAll(userSet);
-        this.user = user;
-        notify();
-    }
+
     public synchronized void remove(User user) throws InterruptedException {
         if(onlineBuffer.isEmpty()){
             wait();
         }
     }
-    public synchronized HashSet<User> getUserBuffer(){
+    public synchronized HashSet<User> getHashSet(){
         return onlineBuffer;
     }
 }

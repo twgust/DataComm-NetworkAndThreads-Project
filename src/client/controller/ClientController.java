@@ -7,9 +7,13 @@ import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.SelectorProvider;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.*;
 
@@ -26,15 +30,15 @@ import java.util.concurrent.*;
  * 2, Create a username and profile picture before connecting: [x]
  * 3, Disconnect from server: [x]
  * <p>
- * 3, Send messages to User(s) - through Server: [] partial
+ * 3, Send messages to User(s) - through Server: [] partial (images,txtimage)
  * 4, Receive messages from User(s) - through Server: [x]
  * <p>
  * 5, Display connected User(s): [X]
- * 6, Add connected users to a Contact list: []
- * 7, Save contact list on local storage ON client disconnect and exit:  []
- * 8, Load contact list from local storage On client connect and startup: []
- * 9, Select recipients of message from Contact list: []
- * 10, Select recipients of message from Online list: []
+ * 6, Add connected users to a Contact list: [] <--
+ * 7, Save contact list on local storage ON client disconnect and exit:  [] <--
+ * 8, Load contact list from local storage On client connect and startup: [] <--
+ * 9, Select recipients of message from Contact list: [] <--
+ * 10, Select recipients of message from Online list: [] <---
  * <p>
  * All funcitionality described above - with exception to 7 & 8 -
  * should be available through the ClientView (GUI): []
@@ -76,6 +80,8 @@ public class ClientController {
     private ClientConnect connect;
     private User user;
     private String id;
+    private Receivables receivables;
+
 
     /**
      *
@@ -140,23 +146,31 @@ public class ClientController {
     public void connectToServer(String username, String path) {
         threadPool = Executors.newFixedThreadPool(4);
         connect = new ClientConnect(username, path);
-        receiveMessage = new ReceiveMessage();
         onlineUserHashSet = new HashSet<>();
-
+        receivables = new Receivables();
 
         FutureTask<String> connectTask = new FutureTask<>(connect, "good");
         threadPool.submit(connectTask);
-            // connectTask.get() returns "good" if executed without exceptions
+            // connectTask.get() returns "good" if executed without throwing exceptions
             try{
                 if (connectTask.get().equals("good")) {
                     connectionHandler.connectionOpenedCallback
                             ("Success established connection to: " + clientSocket.getInetAddress().toString(), user);
+                    threadPool.execute(new ResponseHandler());
+                    threadPool.execute(new ReceiveMessage());
+
                 }
             }catch (InterruptedException | ExecutionException e){
                 e.printStackTrace();
             }
-            threadPool.submit(receiveMessage);
+
+
     }
+
+    /**
+     * Does exactly what it says
+     * @param socket socket
+     */
     private void setupStreams(Socket socket){
         try{
             this.os = socket.getOutputStream();
@@ -197,10 +211,10 @@ public class ClientController {
     }
 
     /**
-     * TODO
+     * Sends a text only Message to server, see Message class for more details.
      * @param message chat message only containing text
      */
-    public void sendChatMsg(String message, Object[] recipients, MessageType msgType) {
+    public synchronized void sendChatMsg(String message, Object[] recipients, MessageType msgType) {
         assert (user != null);
         ArrayList<User> recipientList = new ArrayList<>();
 
@@ -209,11 +223,25 @@ public class ClientController {
                 recipientList.add((User)o);
             }
         }
-        recipientList.remove(user);
+        //recipientList.remove(user);
+        //hardcoded test solution until gui is in place
 
         switch (msgType){
             case TEXT -> {
-                threadPool.submit(new SendMessage(new Message(message, user,recipientList, msgType),clientSocket));
+                Message message1 = new Message(message, user,recipientList,msgType);
+                SendMessage sendMessage1 = new SendMessage(message1, clientSocket);
+                FutureTask<String> await = new FutureTask<>(sendMessage1,"result");
+                System.out.println("attempting to send message");
+                threadPool.submit(await);
+                while(true) {
+                    try {
+                        if (await.get().equals("result")){
+                            //notify gui
+                            System.out.println("message sent");return;}
+                    }
+                    catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
+                }
+
             }
             case IMAGE -> System.out.println("todo" );
             case TEXT_IMAGE -> System.out.println("todo");
@@ -222,7 +250,7 @@ public class ClientController {
     }
 
     /**
-     * TODO
+     * Sends an image only Message to server, see Message class for more detail
      * @param icon chat message only containing an image
      */
     public void sendChatMsg(ImageIcon icon) {
@@ -235,27 +263,45 @@ public class ClientController {
      * using conditional and "instance of" and then handles
      * object returned from server accordingly
      */
-
     private class ReceiveMessage implements Runnable {
         @Override
         public void run() {
             while (true) {
                 try {
-                    Object o = ois.readObject();
-                    if (o instanceof UserSet) {
-                        handleUserHashSetResponse(o, onlineUserHashSet);
 
-                        // call the interface after response has been handled
-                        connectionHandler.usersUpdatedCallback(onlineUserHashSet);
+                    Object o = ois.readObject();
+                    if (o instanceof Sendables){
+                        receivables.enqueueSendable((Sendables) o);
                     }
-                    if (o instanceof Message) {handleMessageResponse(o);}
+
                 }
-                catch (IOException e){
-                    exceptionHandler(e, Thread.currentThread(), "");
-                }
-                catch (ClassNotFoundException e){
+                catch (IOException | InterruptedException | ClassNotFoundException e){
                     e.printStackTrace();
-                    exceptionHandler(e, Thread.currentThread(), " error reading from server");
+                }
+            }
+        }
+    }
+    private class ResponseHandler implements Runnable{
+        @Override
+        public void run() {
+            while(receivables != null){
+                Sendables objet = null;
+                try {
+                    objet = receivables.dequeueSendable();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                switch (Objects.requireNonNull(objet).getSendableType()){
+                    case Message ->{
+                        Message message = (Message) objet;
+                        handleMessageResponse(message);
+                    }
+                    case UserSet -> {
+                        UserSet userSet = (UserSet) objet;
+                        handleUserHashSetResponse(userSet,onlineUserHashSet);
+                        connectionHandler.usersUpdatedCallback(onlineUserHashSet);
+
+                    }
                 }
             }
         }
@@ -269,31 +315,35 @@ public class ClientController {
      */
     private void handleUserHashSetResponse(Object o, HashSet<User> set) {
         if(o instanceof UserSet u){
-            if(u.getUserType().equals(HandledUserType.Connected)){
+            if(u.getUserType().equals(ConnectionEventType.Connected)){
                 Set<User> tmp = ((UserSet) o).getUserSet();
-                tmp.parallelStream().forEach(set::add);
+                set.addAll(tmp);
+                System.out.println(set.size() + " " + clientSocket.getLocalPort());
             }
-            else if (u.getUserType().equals(HandledUserType.Disconnected)){
+            else if (u.getUserType().equals(ConnectionEventType.Disconnected)){
                 set.remove(u.getHandledUser());
             }
         }
     }
 
     /**
+     * Fires the implementation which corresponds to the type of (Message) Object o.
      * @param o takes in a message object from OOS,
-     * fires the implementation which corresponds to the type of (Message) Object o.
      */
     private void handleMessageResponse(Object o) {
         Message message = (Message) o;
         switch (message.getType()) {
-            case TEXT -> msgReceivedHandler.textMessageReceived(message, LocalTime.now());
+            case TEXT -> {
+                msgReceivedHandler.textMessageReceived(message, LocalTime.now());
+                System.out.println("Received text message, passing information to gui");
+            }
             case IMAGE -> msgReceivedHandler.imageMessageReceived(message, LocalTime.now());
             case TEXT_IMAGE -> msgReceivedHandler.txtAndImgMessageReceived(message, LocalTime.now());
         }
     }
 
     /**
-     *
+     * Runnable for sending message to server
      */
     private class SendMessage implements Runnable {
         private Message message;
@@ -309,6 +359,7 @@ public class ClientController {
         public void run() {
             try{
                 if(message!=null){
+                    System.out.println("sending msg");
                     oos.writeObject(message);
                     oos.flush();
                 }
@@ -317,7 +368,7 @@ public class ClientController {
                     oos.flush();
                 }
             } catch (IOException e) {
-                exceptionHandler(e, Thread.currentThread(), " failed to send message" );
+                e.printStackTrace();
             }
         }
     }
@@ -344,6 +395,8 @@ public class ClientController {
          */
         @Override
         public void run() {
+
+
             try {
                 // step 1: read image from file
                 BufferedImage bufferedImage = ImageIO.read(new File(path));
@@ -364,20 +417,25 @@ public class ClientController {
                 // step 4: write user object to server
                 oos.writeObject(user);
                 oos.flush();
-
+                System.out.println(clientSocket.getLocalPort());
 
             } catch (IOException e) {
                 exceptionHandler(e, Thread.currentThread(), "failed to connect");
             }
+
+
         }
     }
 
     /**
-     *
+     * Checks status of opened streams,
+     * closes them and notifies client through a GUI update.
      */
     private class ClientDisconnect implements Runnable {
+        /**
+         * default constructor
+         */
         public ClientDisconnect(){
-
         }
         @Override
         public void run() {
@@ -397,7 +455,7 @@ public class ClientController {
                 if (clientSocket != null) {
                     clientSocket.close();
                     clientSocket = null;
-
+                    receivables = null;
                     //clear hash set and tell the interface to update gui
                     onlineUserHashSet.clear();
                     connectionHandler.connectionClosedCallback("You've been disconnected");

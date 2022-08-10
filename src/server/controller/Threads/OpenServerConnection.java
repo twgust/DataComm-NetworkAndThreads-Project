@@ -2,34 +2,39 @@ package server.controller.Threads;
 
 import entity.User;
 import server.Entity.Client;
+import server.RunServer;
 import server.controller.Buffer.ClientBuffer;
-import server.ServerInterface.LoggerCallBack;
-import server.ServerInterface.UserConnectionCallback;
+import server.ServerInterface.UserConnectionEvent;
 import server.controller.ServerLogger;
 
 import javax.imageio.ImageIO;
-import javax.net.SocketFactory;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
 import java.time.LocalTime;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 
 /**
  * Concurrent Server
  */
-public class ServerMainThread implements Runnable{
+public class OpenServerConnection implements Runnable{
     private final ClientBuffer buffer;
     private final ServerLogger logger;
-    private final UserConnectionCallback userConnectionCallback;
+    private final UserConnectionEvent userConnectionEvent;
+    private ThreadPoolExecutor serverMainExecutor;
 
-
-    public ServerMainThread(ClientBuffer buffer, ServerLogger logger, UserConnectionCallback userConnectionCallback){
-        this.buffer = buffer;
+    public OpenServerConnection(ServerLogger logger, ClientBuffer buffer, UserConnectionEvent userConnectionEvent){
         this.logger = logger;
-        this.userConnectionCallback = userConnectionCallback;
-
+        this.buffer = buffer;
+        this.userConnectionEvent = userConnectionEvent;
+    }
+    public void setSingleThreadExecutor(ThreadPoolExecutor singleThreadExecutor){
+        this.serverMainExecutor = singleThreadExecutor;
+    }
+    public void startServer(){
+        serverMainExecutor.execute(this);
     }
     @Override
     public void run(){
@@ -49,23 +54,21 @@ public class ServerMainThread implements Runnable{
                     logger.logEvent(Level.WARNING, logStartServerMsg, LocalTime.now());
                 }
             }
-            System.out.println("ok");
             String logServerRunningMsg = " server running on port: [" + serverSocket.getLocalPort() + "]";
             logger.logEvent(Level.INFO, logServerRunningMsg, LocalTime.now());
 
-                // multithreaded server
+
+                // multithreaded server, one iteration = one client processed
                 while(true){
                     Socket clientSocket = serverSocket.accept();
                     // start timer after client connection accepted
                     long start = System.currentTimeMillis();
 
-                    // set up streams for client
                     InputStream is = clientSocket.getInputStream();
                     ObjectInputStream ois = new ObjectInputStream(is);
                     OutputStream os = clientSocket.getOutputStream();
                     ObjectOutputStream oos = new ObjectOutputStream(os);
 
-                    User user = null;
                     Object oUser = null;
 
                     // Step 1) read object
@@ -79,21 +82,20 @@ public class ServerMainThread implements Runnable{
                     if(oUser instanceof User){
 
                         // Step 3) cast the generic to User and read the byte[]
-                        user = (User) oUser;
+                        User user = (User) oUser;
                         byte[] imgInBytes = user.getAvatarAsByteBuffer();
 
                         // Step 4) buffer the img and write it to server storage
                         ByteArrayInputStream bais = new ByteArrayInputStream(imgInBytes);
                         BufferedImage img = ImageIO.read(bais);
-                        String path = "src/server/avatars/"+ user.getUsername() + ".jpg";
-                        ImageIO.write(img, "jpg", new File(path)); //Save the file, works!
+                        String folder = RunServer.getProgramPath2();
+                        String fileSeparator = System.getProperty("file.separator");
+                        String newDir = folder + fileSeparator + "User Avatars" + fileSeparator;
+                        ImageIO.write(img, "jpg", new File(newDir)); //Save the file, works!
 
                         // Step 5) put the buffer in the user, enabling server to perform operations on client
                         Client client = new Client(clientSocket, oos, ois);
                         buffer.put(user, client);
-
-                        // start a separate thread which listens to client
-                        // step 6) fire implementation of userConnectionCallback
 
                         // log to server gui
                         long end = (System.currentTimeMillis() - start);
@@ -103,7 +105,10 @@ public class ServerMainThread implements Runnable{
                         // log to server gui
                         String logUserConnectedMsg = user.getUsername() + " connected to server";
                         logger.logEvent(Level.INFO, logUserConnectedMsg, LocalTime.now());
-                        userConnectionCallback.onUserConnectListener(user);
+
+                        // step 6) fire implementation of userConnectionCallback
+                        userConnectionEvent.onUserConnectListener(user);
+
                     }
                 }
             }

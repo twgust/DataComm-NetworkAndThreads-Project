@@ -26,7 +26,7 @@ import java.util.ArrayList;
  * TimeDate when Message was received by server (this is handled by server)
  * TimeDate when Message was received by client (see above)
  */
-public class Message implements Serializable {
+public class Message extends Sendables  {
     private String textMessage;
     private ImageIcon image;
     private final User author;
@@ -39,6 +39,16 @@ public class Message implements Serializable {
         this.author = author;
         this.recipientList = recipients;
         this.type = type;
+    }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "textMessage='" + textMessage + '\'' +
+                ", author=" + author +
+                ", recipientList=" + recipientList +
+                ", type=" + type +
+                '}';
     }
 
     /**
@@ -113,5 +123,10 @@ public class Message implements Serializable {
      */
     public MessageType getType() {
         return type;
+    }
+
+    @Override
+    public SendableType getSendableType() {
+        return SendableType.Message;
     }
 }

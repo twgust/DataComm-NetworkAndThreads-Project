@@ -23,10 +23,14 @@ public class ServerLogger {
         date = new Date();
         fw = new FileWriter("log/"+date.getTime()+".txt");
     }
-    public void logEvent(Level level, String info, LocalTime time) throws IOException {
+    public void logEvent(Level level, String info, LocalTime time) {
         String builtString = buildString(level, info, time);
-        loggerCallback.logInfoToGui(info, level);
-        logEventToFile(builtString);
+        loggerCallback.logInfoToGui(builtString, level);
+        try{
+            logEventToFile(builtString);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
     }
     public void logEventToFile(String info) throws IOException {
         fw.write(info);

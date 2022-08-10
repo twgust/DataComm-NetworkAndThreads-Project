@@ -10,22 +10,22 @@ import java.util.Set;
  * E.g. if onUserConnectListener(User) fired then the handledUser is the user which connected
  * and triggered the UserConnectionCallback.
  */
-public class UserSet implements Serializable {
+public class UserSet extends Sendables {
     private HashSet<User> setOfUsers;
     private User handledUser;
 
-    public HandledUserType getUserType() {
+    public ConnectionEventType getUserType() {
         return userType;
     }
 
-    private HandledUserType userType;
+    private ConnectionEventType userType;
 
     /**
      * Constructor
      * @param set set of users in hashset, won't add duplicate users.
      * @param handledUser the user of onUserConnectListener(User) / onUserDisconnectListener(User)
      */
-    public UserSet(HashSet<User> set, User handledUser, HandledUserType userType) {
+    public UserSet(HashSet<User> set, User handledUser, ConnectionEventType userType) {
         this.setOfUsers =  set;
 
         // connect / disconnect
@@ -47,5 +47,10 @@ public class UserSet implements Serializable {
 
     public  User getHandledUser() {
         return handledUser;
+    }
+
+    @Override
+    public SendableType getSendableType() {
+        return SendableType.UserSet;
     }
 }

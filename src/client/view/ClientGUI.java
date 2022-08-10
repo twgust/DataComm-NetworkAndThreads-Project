@@ -57,21 +57,27 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
     }
 
     /**
-     * WIP
+     * GUI invokes
      * @param message string fetched from textfield
      * @param msgType hardcoded for testing, solving in gui later
      */
     public void sendMessage(String message, MessageType msgType){
-        // recipients of message, selected by user in gui
-
-        //test case, send to all connected clients
-        ArrayList<User> userArrayList = new ArrayList<>();
-        Object[] objects = listModel.toArray();
-        // the type of message, also selected in gui
-        MessageType type = msgType;
-        switch (type){
-            case TEXT -> clientController.sendChatMsg(message, objects,  msgType);
+        if(listModel.isEmpty()){
+            System.out.println("U haven't selected any recipients!");
+            return;
         }
+        // recipients of message, selected by user in gui
+        SwingUtilities.invokeLater(()->{
+            //test case, send to all connected clients
+            ArrayList<User> userArrayList = new ArrayList<>();
+            Object[] objects = listModel.toArray();
+            // the type of message, also selected in gui
+            MessageType type = msgType;
+            switch (type){
+                case TEXT -> clientController.sendChatMsg(message, objects,  msgType);
+                case IMAGE -> System.out.println("img");
+                case TEXT_IMAGE -> System.out.println("textImg");
+            }});
 
     }
 
@@ -131,7 +137,8 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
     @Override
     public void textMessageReceived(Message message, LocalTime timeNow) {
         SwingUtilities.invokeLater(()->{
-            textAreaChat.append(message.getAuthor().toString() + ": " + message.getTextMessage());
+            System.out.println(message.getTextMessage());
+            textAreaChat.append(LocalTime.now() + ": " + message.getAuthor().getUsername() + ": " + message.getTextMessage() + "\n");
         });
     }
     /**

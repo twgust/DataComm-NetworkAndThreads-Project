@@ -1,6 +1,6 @@
 package entity;
 
-public enum HandledUserType {
+public enum ConnectionEventType {
     Connected,
     Disconnected
 }

@@ -11,7 +11,7 @@ import java.io.Serializable;
  * Username AND Image
  *
  */
-public class User implements Serializable {
+public class User extends Sendables {
     private final String username;
     private byte[] avatarBuffer;
     private transient ImageIcon avatar;
@@ -106,5 +106,10 @@ public class User implements Serializable {
     @Override
     public String toString() {
         return "{" + "name='" + username + "'}";
+    }
+
+    @Override
+    public SendableType getSendableType() {
+        return null;
     }
 }
