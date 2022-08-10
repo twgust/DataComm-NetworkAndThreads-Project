@@ -4,38 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/client/controller/Receivables.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/entity/SendableType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/entity/Sendables.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/entity/Stream.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/ServerInterface/ObjectSender.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/ServerInterface/UserSetProducedEvent.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/controller/Buffer/SendablesBuffer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/controller/ThreadCreator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/controller/Threads/ClientHandlerThread.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/controller/Threads/MessageReceiverThread.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/controller/Threads/Sender/MessageCallable.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/controller/Threads/Sender/ObjectSenderThread.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/server/controller/Threads/UserSetProducer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/RunClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/RunClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/controller/ClientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/view/ClientGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/view/ClientGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/entity/HandledUserType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/ConnectionEventType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/entity/Message.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/Message.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/entity/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/entity/UserSet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/UserSet.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/ServerInterface/MessageReceivedListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/ServerInterface/MessageReceivedEvent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/ServerInterface/UserConnectionCallback.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/ServerInterface/UserConnectionEvent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/Buffer/ClientBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Buffer/ClientBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/Buffer/MessageBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Buffer/MessageBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/Buffer/UserBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Buffer/UserBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/ServerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/ServerLogger.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerLogger.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/Threads/ServerMainThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Threads/OpenServerConnection.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/view/ServerGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/view/ServerGUI.java" afterDir="false" />
-    </list>
+    <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -183,7 +152,7 @@
       <workItem from="1659726838662" duration="636000" />
       <workItem from="1659728731913" duration="48924000" />
       <workItem from="1659852889958" duration="56309000" />
-      <workItem from="1660138905805" duration="682000" />
+      <workItem from="1660138905805" duration="1015000" />
     </task>
     <servers />
   </component>
