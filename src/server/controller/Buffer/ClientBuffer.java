@@ -4,6 +4,7 @@ import entity.User;
 import server.Entity.Client;
 
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -18,6 +19,7 @@ public class ClientBuffer {
     private final HashMap<User, Client> clientBuffer;
 
     /**
+     * @author twgust
      * Buffer, a thread-safe hashmap implementation containing the connected clients
      * K = User, not by reference but by string since .equals has been overridden.
      * V = Client
@@ -28,6 +30,7 @@ public class ClientBuffer {
     }
 
     /**
+     * @author twgust
      * @param user K
      * @param client V
      */
@@ -37,6 +40,7 @@ public class ClientBuffer {
     }
 
     /**
+     * @author twgust
      * @param user key to fetch
      * @return returns value for K: user
      * @throws InterruptedException if wait() is interrupted exception is thrown
@@ -52,9 +56,12 @@ public class ClientBuffer {
         }
         return clientBuffer.get(user);
     }
+    public synchronized Collection<Client> allValues(){
+        return clientBuffer.values();
+    }
 
     /**
-     *
+     * @author twgust
      * @param user user to be removed, invoked on disconnect
      * @throws InterruptedException if wait() is interrupted exception is thrown
      */
@@ -69,6 +76,7 @@ public class ClientBuffer {
     }
 
     /**
+     * @author twgust
      * @param user the user to look up.
      * @return true if user contains buffer
      */
@@ -78,6 +86,7 @@ public class ClientBuffer {
 
 
     /**
+     * @author twgust
      * @return size, represents nr of clients connected.
      */
     public synchronized int size(){
@@ -85,6 +94,7 @@ public class ClientBuffer {
     }
 
     /**
+     * @author twgust
      * test func for now
      */
     public synchronized void printAllUsers(){
@@ -92,6 +102,7 @@ public class ClientBuffer {
     }
 
     /**
+     * @author twgust
      * @return the complete keySet of buffer
      */
     public synchronized Set<User> getKeySet(){

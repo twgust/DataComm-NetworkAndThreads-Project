@@ -7,9 +7,6 @@ import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.SelectorProvider;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,7 +27,7 @@ import java.util.concurrent.*;
  * 2, Create a username and profile picture before connecting: [x]
  * 3, Disconnect from server: [x]
  * <p>
- * 3, Send messages to User(s) - through Server: [] partial (images,txtimage)
+ * 3, Send messages to User(s) - through Server: [x]
  * 4, Receive messages from User(s) - through Server: [x]
  * <p>
  * 5, Display connected User(s): [X]
@@ -55,9 +52,8 @@ public class ClientController {
     private IConnectionHandler connectionHandler;
     private IMessageReceivedHandler msgReceivedHandler;
 
-    // A list containing all currently online users
 
-    // TODO undecided on solution and data struct A Set of the clients Contacts, E = user
+    // A list containing all currently online users
     // Loaded from local storage on startup, Saved and updated to local storage on exit
     private HashSet<User> onlineUserHashSet;
     private HashSet<User> userContactList;
@@ -80,7 +76,7 @@ public class ClientController {
     private ClientConnect connect;
     private User user;
     private String id;
-    private Receivables receivables;
+    private ObjectBuffer objectBuffer;
 
 
     /**
@@ -147,11 +143,10 @@ public class ClientController {
         threadPool = Executors.newFixedThreadPool(4);
         connect = new ClientConnect(username, path);
         onlineUserHashSet = new HashSet<>();
-        receivables = new Receivables();
+        objectBuffer = new ObjectBuffer();
 
         FutureTask<String> connectTask = new FutureTask<>(connect, "good");
         threadPool.submit(connectTask);
-        // connectTask.get() returns "good" if executed without throwing exceptions
         try{
             if (connectTask.get().equals("good")) {
                 connectionHandler.connectionOpenedCallback
@@ -299,12 +294,12 @@ public class ClientController {
 
                     Object o = ois.readObject();
                     if (o instanceof Sendables){
-                        receivables.enqueueSendable((Sendables) o);
+                        objectBuffer.enqueueSendable((Sendables) o);
                     }
 
                 }
                 catch (IOException | InterruptedException | ClassNotFoundException e){
-                    e.printStackTrace();
+                    exceptionHandler(e, Thread.currentThread(), "");
                 }
             }
         }
@@ -312,10 +307,10 @@ public class ClientController {
     private class ResponseHandler implements Runnable{
         @Override
         public void run() {
-            while(receivables != null){
+            while(objectBuffer != null){
                 Sendables objet = null;
                 try {
-                    objet = receivables.dequeueSendable();
+                    objet = objectBuffer.dequeueSendable();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -326,6 +321,7 @@ public class ClientController {
                     }
                     case UserSet -> {
                         UserSet userSet = (UserSet) objet;
+                        System.out.println(((UserSet) objet).getUserSet().size()  +  "-- " + clientSocket.getLocalPort());
                         handleUserHashSetResponse(userSet,onlineUserHashSet);
                         connectionHandler.usersUpdatedCallback(onlineUserHashSet);
 
@@ -482,9 +478,11 @@ public class ClientController {
                     oos.close();
                 }
                 if (clientSocket != null) {
+
+                    receiveMessage = null;
                     clientSocket.close();
                     clientSocket = null;
-                    receivables = null;
+                    objectBuffer = null;
                     //clear hash set and tell the interface to update gui
                     onlineUserHashSet.clear();
                     connectionHandler.connectionClosedCallback("You've been disconnected");
@@ -507,6 +505,8 @@ public class ClientController {
         if (e instanceof SocketException) {
             if(e instanceof ConnectException){
                 connectionHandler.exceptionCallback(e, messageToGUI);
+                receiveMessage = null;
+                disconnectFromServer();
             }
             else if (e instanceof BindException){
                 connectionHandler.exceptionCallback(e, "port likely in use");

@@ -4,13 +4,21 @@ import entity.Sendables;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * @author twgust
+ *
+ */
 public class SendablesBuffer {
     private final LinkedBlockingQueue<Sendables> queue;
 
+    /**
+     * @author twgust
+     */
     public SendablesBuffer(){
         queue = new LinkedBlockingQueue<>();
     }
     /**
+     * @author twgust
      * Queues a client according to fifo principles
      * @param
      */
@@ -20,6 +28,7 @@ public class SendablesBuffer {
     }
 
     /**
+     * @author twgust
      * @return process client according to FIFO principle
      * @throws InterruptedException wait can throw interrupted-exception of thread is interrupted
      */

@@ -1,11 +1,16 @@
 package server.controller.Threads;
 
+import entity.Message;
 import server.Entity.Client;
 import server.ServerInterface.MessageReceivedEvent;
 
+import server.ServerInterface.UserConnectionEvent;
 import server.controller.ServerLogger;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
@@ -28,14 +33,13 @@ public class ClientHandlerThread {
     private ThreadPoolExecutor clientHandlerThreadPool;
 
     private final MessageReceivedEvent messageReceivedEvent;
-
-
-    public ClientHandlerThread(ServerLogger logger, MessageReceivedEvent event){
-        this.logger = logger;
-        this.messageReceivedEvent = event;
-
+    private final UserConnectionEvent userConnectionEvent;
+    public ClientHandlerThread(ServerLogger logger, MessageReceivedEvent messageReceivedEvent, UserConnectionEvent userConnectionEvent){
         queue = new LinkedList<>();
         clientHandlerThread = new ThreadAssigner();
+        this.messageReceivedEvent = messageReceivedEvent;
+        this.userConnectionEvent = userConnectionEvent;
+        this.logger = logger;
     }
 
     public boolean setThreadPoolExecutor(ThreadPoolExecutor threadPool){
@@ -104,6 +108,46 @@ public class ClientHandlerThread {
                     logger.logEvent(Level.INFO, logThreadAssignedMsg, LocalTime.now());
 
                 } catch (InterruptedException  e){e.printStackTrace();}
+            }
+        }
+    }
+    private class MessageReceiverThread implements Runnable {
+        private MessageReceivedEvent listener;
+        private final ServerLogger logger;
+        private final String ip;
+        private final ObjectInputStream ois;
+        private final Client client;
+
+        /**
+         * @param client Client which is assigned the thread
+         * @param logger logger for gui and .txt file
+         */
+        public MessageReceiverThread(Client client, ServerLogger logger ) {
+            this.logger = logger;
+            this.client = client;
+            ip = client.getSocket().getRemoteSocketAddress().toString();
+            ois = client.getOis();
+        }
+        public void addListener(MessageReceivedEvent listener){
+            this.listener = listener;
+        }
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    Object o = ois.readObject();
+                    if (o instanceof Message) {
+                        Message message = (Message) o;
+                        String logMessageReceived = Thread.currentThread().getName()
+                                + "\n--Message received from @ " + ip + "!"
+                                + "\n---" + message.getAuthor() + " " + message.getType();
+                        logger.logEvent(Level.INFO, logMessageReceived, LocalTime.now());
+                        listener.onMessageReceivedEvent(message);
+                    }
+                } catch (ClassNotFoundException | IOException e) {
+                    userConnectionEvent.onUserDisconnectListener(client.getUser());
+                    break;
+                }
             }
         }
     }

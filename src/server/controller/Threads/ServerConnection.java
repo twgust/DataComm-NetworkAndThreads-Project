@@ -19,13 +19,13 @@ import java.util.logging.Level;
 /**
  * Concurrent Server
  */
-public class OpenServerConnection implements Runnable{
+public class ServerConnection implements Runnable{
     private final ClientBuffer buffer;
     private final ServerLogger logger;
     private final UserConnectionEvent userConnectionEvent;
     private ThreadPoolExecutor serverMainExecutor;
 
-    public OpenServerConnection(ServerLogger logger, ClientBuffer buffer, UserConnectionEvent userConnectionEvent){
+    public ServerConnection(ServerLogger logger, ClientBuffer buffer, UserConnectionEvent userConnectionEvent){
         this.logger = logger;
         this.buffer = buffer;
         this.userConnectionEvent = userConnectionEvent;
@@ -94,7 +94,7 @@ public class OpenServerConnection implements Runnable{
                         ImageIO.write(img, "jpg", new File(newDir)); //Save the file, works!
 
                         // Step 5) put the buffer in the user, enabling server to perform operations on client
-                        Client client = new Client(clientSocket, oos, ois);
+                        Client client = new Client(user,clientSocket, oos, ois);
                         buffer.put(user, client);
 
                         // log to server gui

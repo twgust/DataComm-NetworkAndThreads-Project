@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.concurrent.Callable;
 
-public class MessageCallable implements Callable<ObjectOutputStream> {
+public class MessageCallable implements Callable<Client> {
     private final Message message;
     private Client client;
 
@@ -28,55 +28,42 @@ public class MessageCallable implements Callable<ObjectOutputStream> {
      * @throws Exception if it throws exception close the socket
      */
     @Override
-    public ObjectOutputStream call() throws Exception {
+    public Client call() throws IOException {
         MessageType type;
         ObjectOutputStream oos;
         oos = client.getOos();
         switch (message.getType()){
             case TEXT -> {
                 String threadName = Thread.currentThread().getName();
-                try {
-                    String logSendObject = "sending: " + message.toString() + " -->" + client.getSocket().getRemoteSocketAddress().toString();
-                    //logger.logEvent(Level.INFO, logSendObject, LocalTime.now());
-
-                    oos.writeObject(message);
-                    oos.flush();
-                    oos.reset();
-                    System.out.print("MESSAGESENDER END " + Thread.currentThread().getName());
-                    return oos;
-
-                } catch (IOException e) {
-                    String logSendObjectException = "failed to send: " + message.toString() + " --> " + client.getSocket().getRemoteSocketAddress().toString();
-                    //logger.logEvent(Level.WARNING, logSendObjectException, LocalTime.now() );
-                    e.printStackTrace();
-                }
+                oos.writeObject(message);
+                oos.flush();
+                oos.reset();
+                return client;
             }
+
             case IMAGE -> {
                 byte[] byteBuffer = message.getAuthor().getAvatarAsByteBuffer();
                 assert message.getAuthor().getAvatarAsByteBuffer() != null;
-                try{
+
                     System.out.println(byteBuffer);
                     ByteArrayInputStream bais = new ByteArrayInputStream(byteBuffer);
                     BufferedImage img = ImageIO.read(bais);
                     String folder = RunServer.getProgramPath2();
                     String fileSeparator = System.getProperty("file.separator");
-                    String newDir = folder + fileSeparator + "User Avatars" + fileSeparator;
+                    String newDir = folder + fileSeparator + "messages" + fileSeparator;
                     ImageIO.write(img, "jpg", new File(newDir));
                     bais.close();
                     oos.writeObject(message);
                     oos.flush();
                     oos.reset();
 
-                }catch (IOException e){
-                    e.printStackTrace();
-                }
+
             }
+
             case TEXT_IMAGE -> {
                 System.out.println("");
                 byte[] byteBuffer = message.getAuthor().getAvatarAsByteBuffer();
                 assert message.getAuthor().getAvatarAsByteBuffer() != null;
-                try{
-
                     ByteArrayInputStream bais = new ByteArrayInputStream(byteBuffer);
                     BufferedImage img = ImageIO.read(bais);
                     String folder = RunServer.getProgramPath2();
@@ -88,12 +75,9 @@ public class MessageCallable implements Callable<ObjectOutputStream> {
                     oos.writeObject(message);
                     oos.flush();
                     oos.reset();
-
-                }catch (IOException e){
-                    e.printStackTrace();
                 }
             }
-        }
         return null;
     }
-}
+    }
+

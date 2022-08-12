@@ -66,6 +66,7 @@ public class ObjectSenderThread {
                 Sendables sendable = sendablesBuffer.dequeueSendable();
                 Message message = null;
                 UserSet userSet = null;
+
                 switch (sendable.getSendableType()) {
                     case Message -> {
                         message = (Message) sendable;
@@ -80,24 +81,30 @@ public class ObjectSenderThread {
                             callables.add(callable);
                         });
                         try{
-                            List<Future<ObjectOutputStream>> resultList = threadPoolExecutor.invokeAll(callables);
-                        }catch (Exception e){
-                            //listener.onUserDisconnectListener(clientBuffer);
-                            // call on user disconnect for controller
+                            List<Future<Client>> resultList = threadPoolExecutor.invokeAll(callables);
+                        } catch (InterruptedException e) {
                             e.printStackTrace();
-                            Thread.sleep(100);
                         }
                     }
+
                     case UserSet -> {
                         userSet = (UserSet) sendable;
                         UserSet finalSet = userSet;
-                        userBuffer.getHashSet().stream().forEach(user -> {
-                            Client client = clientBuffer.get(user);
-                            threadPoolExecutor.submit(new ListSender(sendable, client));
-                        });
+                        ArrayList<OnlineListCallable> callables = new ArrayList<>(clientBuffer.size());
+                        Collection<Client> arr = clientBuffer.allValues();
+                        for (Client client: arr) {
+                            OnlineListCallable callable = new OnlineListCallable(logger, finalSet, client);
+                            callables.add(callable);
+                        }
+                        try{
+                            List<Future<Client>> resultList = threadPoolExecutor.invokeAll(callables);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
 
                 }
+
             }catch (InterruptedException e){
                 e.printStackTrace();
             }

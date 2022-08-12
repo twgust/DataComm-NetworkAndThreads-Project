@@ -8,7 +8,7 @@ import server.controller.Buffer.SendablesBuffer;
 import server.controller.Buffer.UserBuffer;
 import server.controller.Threads.ClientHandlerThread;
 import server.controller.Threads.Sender.ObjectSenderThread;
-import server.controller.Threads.OpenServerConnection;
+import server.controller.Threads.ServerConnection;
 import server.controller.Threads.UserSetProducer;
 
 import java.io.*;
@@ -59,7 +59,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     private final UserBuffer userBuffer;
     private final ServerLogger logger;
     // server threads
-    private OpenServerConnection openServerConnection;
+    private ServerConnection serverConnection;
     private ObjectSenderThread objectSenderThread;
     private ClientHandlerThread clientHandler;
     private UserSetProducer userSetProducer;
@@ -67,7 +67,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     // executors for threads & runnables
     private ThreadPoolExecutor clientHandlerSingleThread;
     private ThreadPoolExecutor masterThreadPool;
-    private ThreadPoolExecutor clientHandlerPool;
+    private ThreadPoolExecutor messageReceiverThreadPool;
     private ThreadPoolExecutor objectSenderPool;
     private ThreadPoolExecutor server;
     // when calling a function of the reference the implementations fire
@@ -78,7 +78,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     private MessageReceivedEvent messageReceivedEvent;
 
     /**
-     * Constructor
+     * @author twgust
      */
     public ServerController() throws IOException {
         sendablesBuffer = new SendablesBuffer();
@@ -88,16 +88,27 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
         logger = new ServerLogger();
     }
 
+    /**
+     * @param messageReceivedEvent
+     * @author twgust
+     */
     public void addMessageReceivedListener(MessageReceivedEvent messageReceivedEvent) {
         this.messageReceivedEvent = messageReceivedEvent;
     }
+
     /**
      * @param userConnectionEvent implementation of UserConnectionCallBack Interface
+     * @author twgust
      */
     public void addConnectionListener(UserConnectionEvent userConnectionEvent) {
         this.userConnectionEvent = userConnectionEvent;
     }
-    public void addProducerListener(UserSetProducedEvent userSetProduced){
+
+    /**
+     * @param userSetProduced
+     * @author twgust
+     */
+    public void addProducerListener(UserSetProducedEvent userSetProduced) {
         this.userSetProducedEvent = userSetProduced;
     }
 
@@ -119,102 +130,161 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     }
 
     /**
+     * @author twgust
      * Initializes required components and starts server
      * invoked by ServerGUI.
      */
-    public void startServer()  {
+    public void startServer() {
         registerCallbackListeners();
-        objectSenderThread = new ObjectSenderThread(logger, sendablesBuffer,clientBuffer, userBuffer, messageBuffer);
-        openServerConnection = new OpenServerConnection(logger, clientBuffer, userConnectionEvent);
-        userSetProducer  = new UserSetProducer(userBuffer,userSetProducedEvent);
-        clientHandler = new ClientHandlerThread(logger, messageReceivedEvent);
+        userSetProducer = new UserSetProducer(logger, userBuffer, userSetProducedEvent);
+        serverConnection = new ServerConnection(logger, clientBuffer, userConnectionEvent);
+        clientHandler = new ClientHandlerThread(logger, messageReceivedEvent, userConnectionEvent);
+        objectSenderThread = new ObjectSenderThread(logger, sendablesBuffer, clientBuffer, userBuffer, messageBuffer);
 
         configureExecutors();
 
 
-        openServerConnection.startServer();
+        serverConnection.startServer();
         clientHandler.start();
-        userSetProducer.start();
         objectSenderThread.start();
     }
 
     /**
-     * sets up executors which will run the different modules in the server
+     * @author twgust
+     * sets up executors which will run the different modules in the server.
+     * Allows for higher level of control since the processes within a module can be individually killed as necessary.
+     * <p>
+     * 1) MasterThread pool invoked functions in the controller which starts some work in one of the threads,
+     * typically when events are being called through callback interfaces, E.g. OnUserDisconnect/OnMessageReceived
+     * <p>
+     * 2) ServerThreadPool - Single Thread - Responsible for starting server and accepting incoming connections.
+     * <p>
+     * 3) ClientHandler - Single Thread - MainThread executes Runnable,
+     * 3.1) ClientHandler - Thread Pool - ThreadPool, one thread for each connected client,
+     * each thread in pool listens to its own client through the MessageReceiver.
+     * <p>
+     * 4) Object sender has a thread pool which it uses to concurrently send messages to clients
      */
     private void configureExecutors() {
-        masterThreadPool = createThreadPool("ThreadPool - MASTER", 0,10,new SynchronousQueue<>());
-
+        masterThreadPool = createThreadPool("ThreadPool - MASTER", 0, 10, new SynchronousQueue<>());
 
         server = createThreadPool("ServerThread - Main", 1, 1, new LinkedBlockingQueue<>());
-        openServerConnection.setSingleThreadExecutor(server);
+        serverConnection.setSingleThreadExecutor(server);
 
         clientHandlerSingleThread = createThreadPool("SingleThread - ClientHandlerMain", 1, 1, new LinkedBlockingQueue<>());
         clientHandler.setSingleThreadExecutor(clientHandlerSingleThread);
-
-        clientHandlerPool = createThreadPool("ThreadPool - ClientHandler", 0, 25, new SynchronousQueue<>());
-        clientHandler.setThreadPoolExecutor(clientHandlerPool);
+        messageReceiverThreadPool = createThreadPool("ThreadPool - ClientHandler", 0, 25, new SynchronousQueue<>());
+        clientHandler.setThreadPoolExecutor(messageReceiverThreadPool);
 
         objectSenderPool = createThreadPool("ThreadPool - ObjectSender", 0, 25, new SynchronousQueue<>());
         objectSenderThread.setThreadPoolExecutor(objectSenderPool);
 
     }
 
+    /**
+     * @param name         name of thread
+     * @param corePoolSize size of threads to keep active in pool whether they're doing work, defaults to 0
+     * @param max          max amount of threads at any given point
+     * @param queue        the queue implementation provided
+     * @return a ThreadPoolExecutor (Single/pool)
+     * @author twgust
+     * Custom implementation of executor service, allows for naming of threads in threadpool
+     */
     public ThreadPoolExecutor createThreadPool(String name, int corePoolSize, int max, BlockingQueue<Runnable> queue) {
         return new ThreadPoolExecutor(corePoolSize, max, 60, TimeUnit.SECONDS, queue, new ThreadFactory() {
             final AtomicInteger integer = new AtomicInteger();
 
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, name + "[t=" + integer.getAndIncrement() + "]");
+                return new Thread(r, " <<THREAD: "+name + "[t=" + integer.getAndIncrement() + "]>> ");
             }
         });
     }
 
     /**
+     * @author twgust
      * Implementation of the UserConnectionCallback interface,
      * fires on successful client connection
      * Every connected client is updated when fired.
      */
     @Override
     public void onUserConnectListener(User user) {
-        synchronized (this){
-            masterThreadPool.submit(() -> userSetProducer.queueUserSetProduction(user, ConnectionEventType.Connected));
+        synchronized (this) {
+            String logUserConnectionMsg = Thread.currentThread().getName() + "\nUser:" + user.getUsername() + "connected to the server!\n" +
+                    "updating UserSet and enqueuing client for processing";
+
+            userBuffer.put(user);
+            masterThreadPool.submit(() -> userSetProducer.updateUserSet(user, ConnectionEventType.Connected));
             masterThreadPool.submit(() -> clientHandler.queueClientForProcessing(clientBuffer.get(user)));
         }
     }
 
     /**
-     * @param disconnectedClient the client whose socket was closed.
+     * @param user the client whose socket was closed.
+     * @author twgust
      */
     @Override
-    public void onUserDisconnectListener(User disconnectedClient) {
+    public void onUserDisconnectListener(User user) {
         synchronized (this) {
+            masterThreadPool.submit(() -> {
+                try {
+                    String userDisconnectMsg = Thread.currentThread().getName()
+                            + "\nUser: " + user.getUsername() + " disconnected from the server!";
+
+                    logger.logEvent(Level.WARNING, userDisconnectMsg, LocalTime.now());
+
+                    logger.logEvent(Level.INFO, Thread.currentThread().getName()
+                                    + "\nupdating data structures...",
+                                    LocalTime.now());
+
+                    userBuffer.remove(user);
+                    clientBuffer.removeUser(user);
+                    masterThreadPool.submit(() -> userSetProducer.updateUserSet(user, ConnectionEventType.Disconnected));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+
 
         }
     }
 
+    /**
+     * @param userSet the updated list containing all currently online clients
+     * @author twgust
+     */
     @Override
     public void userSetProduced(UserSet userSet) {
         synchronized (this) {
-                masterThreadPool.submit(()-> {
-                    try {
-                        sendablesBuffer.enqueueSendable(userSet);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                });
+            masterThreadPool.submit(() -> {
+                try {
+                    logger.logEvent(Level.INFO,Thread.currentThread().getName() + "> UserSet produced, updating clients!", LocalTime.now());
+                    sendablesBuffer.enqueueSendable(userSet);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
         }
     }
 
+    /**
+     * @param message
+     * @author twgust
+     */
     @Override
     public void onMessageReceivedEvent(Message message) {
         synchronized (this) {
+            masterThreadPool.submit(() -> {
             try {
-                sendablesBuffer.enqueueSendable(message);
+                logger.logEvent(Level.INFO, Thread.currentThread().getName() +
+                        " enqueuing message to sendables buffer" +
+                        "\n" + message, LocalTime.now());
+                        sendablesBuffer.enqueueSendable(message);
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            });
         }
     }
 

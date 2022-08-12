@@ -4,15 +4,15 @@ import entity.Sendables;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class Receivables {
+public class ObjectBuffer {
     private final LinkedBlockingQueue<Sendables> queue;
 
-    public Receivables(){
+    public ObjectBuffer(){
         queue = new LinkedBlockingQueue<>();
     }
     /**
      * Queues a client according to fifo principles
-     * @param
+     * @param sendable object read from OIS
      */
     public synchronized void enqueueSendable(Sendables sendable) throws InterruptedException {
         queue.put(sendable);

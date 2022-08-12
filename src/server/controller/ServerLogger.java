@@ -40,8 +40,8 @@ public class ServerLogger {
         builder = new StringBuilder();
         return builder.append("SERVER: [").append(time.getHour()).append(':')
                 .append(time.getMinute()).append(':')
-                .append(time.getSecond()).append(']')
-                .append('<').append(level.getName()).append('>')
+                .append(time.getSecond()).append(']').append(' ')
+                .append('(').append(level.getName()).append(')').append(" ")
                 .append(info).append("\n\n").toString();
     }
 

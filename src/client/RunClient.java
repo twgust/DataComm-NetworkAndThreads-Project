@@ -13,11 +13,11 @@ public class RunClient {
         // distinguish between local clients by port number, not remote address// gui starts connection to server because a user will click connect
 
         String ip = "127.0.0.1";
-        ClientController c1 = new ClientController(ip, 33062, "CLIENT-1");
-        ClientController c2 = new ClientController(ip, 33062, "CLIENT-2");
-        ClientController c3 = new ClientController(ip, 33062, "CLIENT-3");
-        ClientController c4 = new ClientController(ip, 33062, "CLIENT-4");
-        ClientController c5 = new ClientController(ip, 33062, "CLIENT-5");
+        ClientController c1 = new ClientController(ip, 36701, "CLIENT-1");
+        ClientController c2 = new ClientController(ip, 36701, "CLIENT-2");
+        ClientController c3 = new ClientController(ip, 36701, "CLIENT-3");
+        ClientController c4 = new ClientController(ip, 36701, "CLIENT-4");
+        ClientController c5 = new ClientController(ip, 36701, "CLIENT-5");
         ClientGUI g1 = new ClientGUI(c1);
         ClientGUI g2 = new ClientGUI(c2);
         ClientGUI g3 = new ClientGUI(c3);
@@ -65,6 +65,7 @@ public class RunClient {
             g3.sendMessage("AAA", "",MessageType.TEXT);
             g3.sendMessage("AAA", "",MessageType.TEXT);
             g3.sendMessage("AAA", "",MessageType.TEXT);
+            g1.disconnect();
 
 
         });

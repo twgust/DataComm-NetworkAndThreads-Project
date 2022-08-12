@@ -1,10 +1,17 @@
 package server.Entity;
 
+import entity.User;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 public class Client {
+    public User getUser() {
+        return user;
+    }
+
+    private User user;
     public Socket getSocket() {
         return socket;
     }
@@ -17,7 +24,8 @@ public class Client {
         return ois;
     }
 
-    public Client(Socket socket, ObjectOutputStream oos, ObjectInputStream ois) {
+    public Client(User user,Socket socket, ObjectOutputStream oos, ObjectInputStream ois) {
+        this.user = user;
         this.socket = socket;
         this.oos = oos;
         this.ois = ois;
