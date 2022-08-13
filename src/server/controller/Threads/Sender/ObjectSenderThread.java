@@ -23,7 +23,6 @@ public class ObjectSenderThread {
     private final ServerLogger logger;
     private final ClientBuffer clientBuffer;
     private final MessageBuffer messageBuffer;
-    private final UserBuffer userBuffer;
     private final SendablesBuffer sendablesBuffer;
 
     private ThreadPoolExecutor threadPoolExecutor;
@@ -35,13 +34,13 @@ public class ObjectSenderThread {
      * @param clientBuffer reference to buffer (final)
      * @param userBuffer   reference to buffer (final)
      */
-    public ObjectSenderThread(ServerLogger logger, SendablesBuffer buffer,ClientBuffer clientBuffer, UserBuffer userBuffer,
+    public ObjectSenderThread(ServerLogger logger, SendablesBuffer buffer,ClientBuffer clientBuffer ,
                               MessageBuffer messageBuffer, UserConnectionEvent userConnectionEvent) {
         this.logger = logger;
         this.messageBuffer = messageBuffer;
         this.listener = userConnectionEvent;
         this.clientBuffer = clientBuffer;
-        this.userBuffer = userBuffer;
+
         this.sendablesBuffer = buffer;
     }
 

@@ -141,7 +141,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
         userSetProducer = new UserSetProducer(logger, userBuffer, userSetProducedEvent);
         serverConnection = new ServerConnection(logger, clientBuffer, userConnectionEvent);
         clientHandler = new ClientHandlerThread(logger, messageReceivedEvent, userConnectionEvent);
-        objectSenderThread = new ObjectSenderThread(logger, sendablesBuffer, clientBuffer, userBuffer, messageBuffer, userConnectionEvent);
+        objectSenderThread = new ObjectSenderThread(logger, sendablesBuffer, clientBuffer, messageBuffer, userConnectionEvent);
         configureExecutors();
 
 
