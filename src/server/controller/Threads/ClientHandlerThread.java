@@ -96,7 +96,7 @@ public class ClientHandlerThread {
                     String thread = Thread.currentThread().getName();
                     //log the event
                     String logThreadAssignerWaitingMsg = "Executing -> [TASK: Assign-Thread, STATE:RUNNING]" +
-                            "\n>ready for new client!";
+                            " >> Assigning client a MessageReceiver Thread!";
                     logger.logEvent(Level.INFO, thread, logThreadAssignerWaitingMsg, LocalTime.now());
 
                     // fetch client from front of queue
@@ -112,7 +112,7 @@ public class ClientHandlerThread {
 
                     // log the event
                     String logThreadAssignedMsg = "Executed -> [Task: Assign-Thread" + client.getUser() + ", STATE:FINISHED]" +
-                            "\n>assigned MessageReceiver-Thread to client @ " + ip;
+                            " >> Assigned MessageReceiver-Thread to client @ " + ip;
 
                     logger.logEvent(Level.INFO, thread, logThreadAssignedMsg, LocalTime.now());
 

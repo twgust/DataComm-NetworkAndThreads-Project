@@ -272,7 +272,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
         synchronized (this) {
             masterThreadPool.submit(() -> {
                 String thread = Thread.currentThread().getName();
-                String infoMsg = " Executed -> [TASK: Produce-OnlineList] - FINISHED"
+                String infoMsg = " Executed -> [TASK: Produce-OnlineList] >> Success!"
                         + " >> placing updated UserSet first in buffer";
                 logger.logEvent(Level.INFO, thread , infoMsg, LocalTime.now());
                 try {

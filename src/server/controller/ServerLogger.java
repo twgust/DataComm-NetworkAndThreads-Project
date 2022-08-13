@@ -42,7 +42,7 @@ public class ServerLogger {
                 .append(time.getMinute()).append(':')
                 .append(time.getSecond()).append(']').append(' ')
                 .append(' ').append(level.getName()).append(' ').append(" ")
-                .append(thread).append(" - - - - - ").append(info).append("\n\n").toString();
+                .append(thread).append(" - - - << ").append(info).append("\n\n").toString();
     }
 
     public void setLoggerCallback(LoggerCallBack impl) {

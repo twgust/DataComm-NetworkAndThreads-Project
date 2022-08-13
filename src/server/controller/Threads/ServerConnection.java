@@ -108,7 +108,7 @@ public class ServerConnection implements Runnable{
                         // log to server gui
                         long end = (System.currentTimeMillis() - start);
                         String logNewClientConnectionEnd =  "Executing -> [TASK: CLIENT-CONNECTION, STATE:RUNNING]" +
-                                " >>finished processing client [" + ip + "] in " + end + "ms";
+                                " >> finished processing client [" + ip + "] in " + end + "ms!";
                         logger.logEvent(Level.INFO,thread, logNewClientConnectionEnd, LocalTime.now());
 
                         // step 6) fire implementation of userConnectionCallback

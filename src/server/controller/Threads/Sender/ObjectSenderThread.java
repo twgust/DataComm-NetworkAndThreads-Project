@@ -104,7 +104,7 @@ public class ObjectSenderThread {
                         message = (Message) sendable;
                         Message finalMessage = message;
 
-                        String logSendMessageStart = "Executing --[TASK: Send-Message, {"+ message.hashCode() + "}]";
+                        String logSendMessageStart = "Executing ->[TASK: Send-Message, {"+ message.hashCode() + "}]";
                         logger.logEvent(Level.INFO,thread, logSendMessageStart, LocalTime.now());
 
                         // for each recipient, get the associated client object from buffer
@@ -138,7 +138,7 @@ public class ObjectSenderThread {
                                     }
                             }
                         // all online users on the recipient list has been sent a message by this point!
-                        String logSendMessageEnd = "[TASK: Send-Message, {"+message.hashCode()+"}]" + ">Completed!";
+                        String logSendMessageEnd = "[TASK: Send-Message, {"+message.hashCode()+"}]" + "  >> Completed!";
                         logger.logEvent(Level.INFO,thread,logSendMessageEnd, LocalTime.now());
                     }
 
