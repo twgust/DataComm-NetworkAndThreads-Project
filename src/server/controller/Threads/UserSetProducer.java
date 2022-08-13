@@ -37,7 +37,7 @@ public class UserSetProducer{
     public synchronized void updateUserSet(User user, ConnectionEventType type){
         String thread = Thread.currentThread().getName();
 
-        String logUpdateUserSetMsg = "Executing -> [TASK: Produce-OnlineList] - Running";
+        String logUpdateUserSetMsg = "Executing -> [TASK: Produce-OnlineList] >> Running";
         logger.logEvent(Level.INFO,thread,logUpdateUserSetMsg, LocalTime.now());
         switch (type){
             case Connected -> service.execute(()->{

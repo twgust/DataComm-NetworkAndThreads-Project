@@ -60,7 +60,7 @@ public class MessageCallable implements Callable<Client> {
                     oos.reset();
                     return client;
                 } catch (IOException e) {
-                    logger.logEvent(Level.WARNING, thread, "\n\n{\n" + logFailedMessage + "\n}\n\n", LocalTime.now());
+                    logger.logEvent(Level.WARNING, thread, "{" + logFailedMessage + "\n}\n\n", LocalTime.now());
                     ArrayList<User> recipient = new ArrayList(1);
                     recipient.add(client.getUser());
                     messageBuffer.put(

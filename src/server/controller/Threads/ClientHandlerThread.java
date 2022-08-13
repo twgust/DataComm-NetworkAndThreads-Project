@@ -155,12 +155,11 @@ public class ClientHandlerThread {
                     Object o = ois.readObject();
                     if (o instanceof Message) {
                         String thread = Thread.currentThread().getName();
+                        String logMessageReceived = "Executing -> [TASK: Receive-Message]" +
+                                " >> new message received, " + "notifying controller...";
+                        logger.logEvent(Level.INFO, thread, logMessageReceived, LocalTime.now());
 
                         Message message = (Message) o;
-
-                        String logMessageReceived = "Executing -> [TASK: Receive-Message]" +
-                                "\n>notifying controller...";
-                        logger.logEvent(Level.INFO, thread, logMessageReceived, LocalTime.now());
                         listener.onMessageReceivedEvent(message);
                     }
                 } catch (ClassNotFoundException | IOException e) {

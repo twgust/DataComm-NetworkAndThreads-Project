@@ -231,7 +231,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
 
             String thread = Thread.currentThread().getName();
             String ip = "[" +  client.getSocket().getLocalAddress().toString() + ":" + client.getSocket().getLocalPort() + "]";
-            String logUserConnectionMsg ="[TASK:UserConnection " + user + "]" + " >Completed!";
+            String logUserConnectionMsg ="[TASK:UserConnection " + user + "]" + " >> Completed!";
             logger.logEvent(Level.INFO, thread, logUserConnectionMsg, LocalTime.now());
         }
     }
@@ -273,7 +273,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
             masterThreadPool.submit(() -> {
                 String thread = Thread.currentThread().getName();
                 String infoMsg = " Executed -> [TASK: Produce-OnlineList] - FINISHED"
-                        + "\n>placing updated UserSet first in buffer";
+                        + " >> placing updated UserSet first in buffer";
                 logger.logEvent(Level.INFO, thread , infoMsg, LocalTime.now());
                 try {
                     sendablesBuffer.putFirst(userSet);
@@ -297,7 +297,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
                     String thread = Thread.currentThread().getName();
 
                     logger.logEvent(Level.INFO, thread, "Executing -> [TASK: Queue-Message]" +
-                            "\n>enqueuing message received from [" + message.getAuthor()  +  "] to buffer",  LocalTime.now());
+                            " >> enqueuing message received from [" + message.getAuthor()  +  "] to buffer",  LocalTime.now());
                     sendablesBuffer.enqueueSendable(message);
 
                 } catch (InterruptedException e) {

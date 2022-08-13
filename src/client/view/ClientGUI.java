@@ -75,7 +75,6 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
         // recipients of message, selected by user in gui
         SwingUtilities.invokeLater(()->{
             //test case, send to all connected clients
-            ArrayList<User> userArrayList = new ArrayList<>();
             Object[] objects = listModel.toArray();
             // the type of message, also selected in gui
             MessageType type = msgType;
@@ -93,7 +92,7 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
                 case TEXT_IMAGE -> {
                     try {
                         clientController.sendChatMsg(message,objects,msgType, path);
-                    } catch (IOException e) { System.out.println(e);}
+                    } catch (IOException e) { e.printStackTrace(); }
                 }
             }});
     }

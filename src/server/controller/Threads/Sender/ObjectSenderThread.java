@@ -82,14 +82,23 @@ public class ObjectSenderThread {
         System.out.println(newMessage);
 
     }
+
+    /**
+     * @author twgust
+     * Continous loop until shutdown externally,
+     * Processes the Sendable Objects from the sendablesBuffer and sends them to relevant clients.
+     * Prio is UserSet > Message
+     */
     public synchronized void start()   {
         while (sendablesBuffer != null) {
             try{
-
+                // get sendable object by polling it from queue
                 Sendables sendable = sendablesBuffer.dequeueSendable();
                 Message message = null;
                 UserSet userSet = null;
                 String thread = Thread.currentThread().getName();
+
+                // determine type of Sendable (UserSet/Message)
                 switch (sendable.getSendableType()) {
                     case Message -> {
                         message = (Message) sendable;
@@ -98,41 +107,42 @@ public class ObjectSenderThread {
                         String logSendMessageStart = "Executing --[TASK: Send-Message, {"+ message.hashCode() + "}]";
                         logger.logEvent(Level.INFO,thread, logSendMessageStart, LocalTime.now());
 
+                        // for each recipient, get the associated client object from buffer
                         List<Client> list = new ArrayList<>();
                         message.getRecipientList().forEach(user -> {
+                            // if the client is null, add the unsendable message to the buffer,
+                            // the message will be sent once the null client reconnects
                             if(clientBuffer.get(user) == null){
-                                System.out.println("ok now we hre ");
                                 addUnsendableToBuffer(user, finalMessage);
                             }
-                            else{
-                                list.add(clientBuffer.get(user));
-                            }
+                            // else, the client is connected and we add it to the list of clients
+                            else { list.add(clientBuffer.get(user)); }
                         });
-                        System.out.println(list.size());
+
                         ArrayList<MessageCallable> callables = new ArrayList<>(list.size());
+                        // for each client in the list of clients, create a new Callable
                         list.forEach(client -> {
                             MessageCallable callable = new MessageCallable(logger, finalMessage, client, listener, messageBuffer);
                             callables.add(callable);
                         });
-
+                        // invoke all the callables and fetch the result in a list of Future<Client>
                         List<Future<Client>> resultList = threadPoolExecutor.invokeAll(callables, 2, TimeUnit.SECONDS);
                             for (int i = 0; i < resultList.size(); i++) {
                                     Future<Client> clientel = resultList.get(i);
                                     try{
+                                        // here we see if an exception - that wasn't handled by the Callable - occurrs.
                                         Client client = clientel.get();
                                     }catch (ExecutionException e){
                                         System.out.println(e.getCause());
                                         e.printStackTrace();
                                     }
                             }
+                        // all online users on the recipient list has been sent a message by this point!
                         String logSendMessageEnd = "[TASK: Send-Message, {"+message.hashCode()+"}]" + ">Completed!";
                         logger.logEvent(Level.INFO,thread,logSendMessageEnd, LocalTime.now());
-                        System.out.println("\n--DIVIDER--\n");
                     }
 
                     case UserSet -> {
-                        System.out.println("USER UPDATE S");
-
                         userSet = (UserSet) sendable;
                         UserSet finalSet = userSet;
                         ArrayList<OnlineListCallable> callables = new ArrayList<>(clientBuffer.size());
@@ -154,7 +164,6 @@ public class ObjectSenderThread {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        System.out.println("USER UPDATE E");
                     }
 
                 }

@@ -35,7 +35,7 @@ import java.util.concurrent.*;
  * 7, Save contact list on local storage ON client disconnect and exit:  [] <--
  * 8, Load contact list from local storage On client connect and startup: [] <--
  * 9, Select recipients of message from Contact list: [] <--
- * 10, Select recipients of message from Online list: [] <---
+ * 10, Select recipients of message from Online list: [x] <---
  * <p>
  * All funcitionality described above - with exception to 7 & 8 -
  * should be available through the ClientView (GUI): []

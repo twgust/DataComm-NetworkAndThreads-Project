@@ -69,7 +69,7 @@ public class ServerConnection implements Runnable{
                     // start timer after client connection accepted
                     String ip = "[" +  clientSocket.getLocalAddress().toString() + ":" + clientSocket.getLocalPort() + "]";
                     String logNewClientConnectionStart = thread + " Executing -> [TASK: CLIENT-CONNECTION, STATE: RUNNING]" +
-                            "\n new connection from: " + ip;
+                            " >> new connection from: " + ip;
                     long start = System.currentTimeMillis();
 
                     InputStream is = clientSocket.getInputStream();
@@ -108,7 +108,7 @@ public class ServerConnection implements Runnable{
                         // log to server gui
                         long end = (System.currentTimeMillis() - start);
                         String logNewClientConnectionEnd =  "Executing -> [TASK: CLIENT-CONNECTION, STATE:RUNNING]" +
-                                "\n>finished processing client [" + ip + "] in " + end + "ms";
+                                " >>finished processing client [" + ip + "] in " + end + "ms";
                         logger.logEvent(Level.INFO,thread, logNewClientConnectionEnd, LocalTime.now());
 
                         // step 6) fire implementation of userConnectionCallback
