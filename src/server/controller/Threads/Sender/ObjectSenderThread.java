@@ -9,12 +9,9 @@ import server.controller.Buffer.SendablesBuffer;
 import server.controller.Buffer.UserBuffer;
 import server.controller.ServerLogger;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 /**
@@ -63,6 +60,28 @@ public class ObjectSenderThread {
             start();
         });
     }
+
+    private synchronized void addUnsendableToBuffer(User user, Message message) {
+        ArrayList<User> recipient = new ArrayList<>();
+        recipient.add(user);
+        Message newMessage = null;
+        switch (message.getType()) {
+            case TEXT -> {
+                newMessage = new Message(message.getTextMessage(), message.getAuthor(), recipient, MessageType.TEXT);
+                messageBuffer.put(newMessage, user);
+            }
+            case IMAGE ->{
+                newMessage = new Message(message.getImage(), message.getAuthor(), recipient, MessageType.IMAGE);
+                messageBuffer.put(newMessage, user);
+            }
+            case TEXT_IMAGE -> {
+                newMessage = new Message(message.getTextMessage(), message.getImage(), message.getAuthor(), recipient, MessageType.TEXT_IMAGE);
+                messageBuffer.put(newMessage, user);
+            }
+        }
+        System.out.println(newMessage);
+
+    }
     public synchronized void start()   {
         while (sendablesBuffer != null) {
             try{
@@ -82,14 +101,14 @@ public class ObjectSenderThread {
                         List<Client> list = new ArrayList<>();
                         message.getRecipientList().forEach(user -> {
                             if(clientBuffer.get(user) == null){
-                                System.out.println(user.toString() + " appears to be offline");
-
+                                System.out.println("ok now we hre ");
+                                addUnsendableToBuffer(user, finalMessage);
                             }
                             else{
                                 list.add(clientBuffer.get(user));
                             }
-
                         });
+                        System.out.println(list.size());
                         ArrayList<MessageCallable> callables = new ArrayList<>(list.size());
                         list.forEach(client -> {
                             MessageCallable callable = new MessageCallable(logger, finalMessage, client, listener, messageBuffer);
@@ -112,6 +131,7 @@ public class ObjectSenderThread {
                     }
 
                     case UserSet -> {
+                        System.out.println("USER UPDATE S");
 
                         userSet = (UserSet) sendable;
                         UserSet finalSet = userSet;
@@ -134,6 +154,7 @@ public class ObjectSenderThread {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+                        System.out.println("USER UPDATE E");
                     }
 
                 }

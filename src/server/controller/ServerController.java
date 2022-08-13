@@ -15,6 +15,7 @@ import server.controller.Threads.UserSetProducer;
 import java.io.*;
 import java.net.SocketException;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -45,7 +46,7 @@ import java.util.logging.Level;
  * <p>
  * 4, Store a Messages that can't be sent in some Data Structure [x]
  * 4.1 Operations on the Data Structure need be Synchronized [x]
- * 4.2 On Client reconnect, send the stored Message []
+ * 4.2 On Client reconnect, send the stored Message [X]
  * <p>
  * 5, Log all traffic on the server to a locally stored File [x]
  * 5.1 Display all traffic on the server through a Server GUI (ServerView) [x] Partial
@@ -168,6 +169,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
      * 4) Object sender has a thread pool which it uses to concurrently send messages to clients
      */
     private void configureExecutors() {
+        //strange name formatting for CLI
         masterThreadPool = createThreadPool("ThreadPool - ServerController           ", 0, 50, new SynchronousQueue<>());
         objectSenderPool = createThreadPool("ThreadPool -  ObjectSender               ", 0, 50, new SynchronousQueue<>());
         serverConnSingleThread = createThreadPool("SingleThread - ServerConnection     ", 1, 1, new LinkedBlockingQueue<>());
@@ -215,6 +217,18 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
             userBuffer.put(user);
             masterThreadPool.submit(() -> userSetProducer.updateUserSet(user, ConnectionEventType.Connected));
             masterThreadPool.submit(() -> clientHandler.queueClientForProcessing(client));
+
+            masterThreadPool.submit(()->{
+                ArrayList<Message> unsentMsgList = (ArrayList<Message>) messageBuffer.getAllUnsentMessages(user);
+                for (Message msg: unsentMsgList) {
+                    try {
+                        sendablesBuffer.enqueueSendable(msg);
+                        messageBuffer.remove(msg);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
 
             String thread = Thread.currentThread().getName();
             String ip = "[" +  client.getSocket().getLocalAddress().toString() + ":" + client.getSocket().getLocalPort() + "]";

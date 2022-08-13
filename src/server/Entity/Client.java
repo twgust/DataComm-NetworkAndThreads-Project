@@ -1,15 +1,19 @@
 package server.Entity;
 
 import entity.User;
+import server.controller.Buffer.MessageBuffer;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /**
+ * Representation of a socket + the associated user 
  * @author twgust
  */
 public class Client {
+
+
     public User getUser() {
         return user;
     }
@@ -32,6 +36,7 @@ public class Client {
         this.socket = socket;
         this.oos = oos;
         this.ois = ois;
+
     }
 
     private final Socket socket;

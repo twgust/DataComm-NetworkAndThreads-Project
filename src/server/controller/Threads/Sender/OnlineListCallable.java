@@ -29,7 +29,7 @@ public class OnlineListCallable implements Callable<Client> {
     public Client call() {
         String thread = Thread.currentThread().getName();
         String ip = client.getSocket().getLocalAddress().toString() + ":" + client.getSocket().getLocalPort();
-        logger.logEvent(Level.INFO,thread ,"Executing ---[ TASK: UPDATE-OnlineLists " + client.getUser() + "]", LocalTime.now());
+        logger.logEvent(Level.INFO, thread, "Executing ---[ TASK: UPDATE-OnlineLists " + client.getUser() + "]", LocalTime.now());
 
         try {
             ObjectOutputStream oos;
@@ -37,14 +37,19 @@ public class OnlineListCallable implements Callable<Client> {
             oos.writeObject(set);
             oos.flush();
             oos.reset();
-            logger.logEvent(Level.INFO,thread ,"[TASK: UPDATE-OnlineLists, " + client.getUser() + "] >Completed",LocalTime.now());
+            logger.logEvent(Level.INFO, thread, "[TASK: UPDATE-OnlineLists, " + client.getUser() + "] >Completed", LocalTime.now());
+
+
             return client;
         } catch (IOException e) {
-            String logClientUpdateException ="IOException encountered in ---[TASK: UPDATE-OnlineLists]";
+            String logClientUpdateException = "IOException encountered in ---[TASK: UPDATE-OnlineLists]";
             logger.logEvent(Level.WARNING, thread, logClientUpdateException, LocalTime.now());
+
+
             e.printStackTrace();
             return null;
         }
+
 
     }
 }

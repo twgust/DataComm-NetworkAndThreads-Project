@@ -82,8 +82,8 @@ public class RunClient {
         });
         threadpool.submit(() -> {
             try{
+                Thread.sleep(5000);
                 g1.connect("user-6", "src/client/images/circle_of_fifths.jpg");
-                Thread.sleep(1000);
             }catch (InterruptedException e){
                 e.printStackTrace();
             }
