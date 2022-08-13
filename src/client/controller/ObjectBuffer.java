@@ -4,6 +4,9 @@ import entity.Sendables;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * @author twgust
+ */
 public class ObjectBuffer {
     private final LinkedBlockingQueue<Sendables> queue;
 

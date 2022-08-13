@@ -17,17 +17,19 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 
 /**
- * Concurrent Server
+ * @author twgust
+ * Concurrent server
  */
 public class ServerConnection implements Runnable{
-    private final ClientBuffer buffer;
     private final ServerLogger logger;
+    private final ClientBuffer clientBuffer;
     private final UserConnectionEvent userConnectionEvent;
+
     private ThreadPoolExecutor serverMainExecutor;
 
     public ServerConnection(ServerLogger logger, ClientBuffer buffer, UserConnectionEvent userConnectionEvent){
         this.logger = logger;
-        this.buffer = buffer;
+        this.clientBuffer = buffer;
         this.userConnectionEvent = userConnectionEvent;
     }
     public void setSingleThreadExecutor(ThreadPoolExecutor singleThreadExecutor){
@@ -95,7 +97,7 @@ public class ServerConnection implements Runnable{
 
                         // Step 5) put the buffer in the user, enabling server to perform operations on client
                         Client client = new Client(user,clientSocket, oos, ois);
-                        buffer.put(user, client);
+                        clientBuffer.put(user, client);
 
                         // log to server gui
                         long end = (System.currentTimeMillis() - start);
@@ -103,8 +105,8 @@ public class ServerConnection implements Runnable{
                         logger.logEvent(Level.INFO, logClientTimeToConnectMsg, LocalTime.now());
 
                         // log to server gui
-                        String logUserConnectedMsg = user.getUsername() + " connected to server";
-                        logger.logEvent(Level.INFO, logUserConnectedMsg, LocalTime.now());
+                       // String logUserConnectedMsg = user.getUsername() + " connected to server";
+                     //   logger.logEvent(Level.INFO, logUserConnectedMsg, LocalTime.now());
 
                         // step 6) fire implementation of userConnectionCallback
                         userConnectionEvent.onUserConnectListener(user);

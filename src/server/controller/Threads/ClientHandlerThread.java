@@ -9,6 +9,7 @@ import server.controller.ServerLogger;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.net.SocketException;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -16,8 +17,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 
 /**
+ * @author twgust
+ *
  * ClientHandler
- * Runs on its own Thread "ClientHandler", fetches an element from the buffer
+ * Runs on its own Thread "ClientHandler", fetches an element from the buffer (queue)
  * The important difference between ClientHandlers buffer and Client buffer lies in data structure choice
  *
  * ClientBuffer is used for look up and consists of a hashmap<User,Client>
@@ -80,6 +83,7 @@ public class ClientHandlerThread {
 
 
     /**
+     * @author twgust
      * Thread for assigning a messageReceiver to each connected client
      * Thread is never freed unless server closes connection
      */
@@ -89,7 +93,7 @@ public class ClientHandlerThread {
             while(true){
                 try{
                     //log the event
-                    String logThreadAssignerWaitingMsg = Thread.currentThread().getName() + " awaiting client to process...";
+                    String logThreadAssignerWaitingMsg = Thread.currentThread().getName() + " ready for new client!";
                     logger.logEvent(Level.INFO, logThreadAssignerWaitingMsg, LocalTime.now());
 
                     // fetch client from front of queue
@@ -111,6 +115,10 @@ public class ClientHandlerThread {
             }
         }
     }
+
+    /**
+     * @author twgust
+     */
     private class MessageReceiverThread implements Runnable {
         private MessageReceivedEvent listener;
         private final ServerLogger logger;
@@ -145,8 +153,14 @@ public class ClientHandlerThread {
                         listener.onMessageReceivedEvent(message);
                     }
                 } catch (ClassNotFoundException | IOException e) {
-                    userConnectionEvent.onUserDisconnectListener(client.getUser());
-                    break;
+
+                    if (e instanceof SocketException){
+                      //  userConnectionEvent.onUserDisconnectListener(client.getUser());
+                        System.out.println("closed");
+                        e.printStackTrace();
+                        break;
+                    }
+                    //userConnectionEvent.onUserDisconnectListener(client.getUser());
                 }
             }
         }

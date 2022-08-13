@@ -1,5 +1,7 @@
 package entity;
-
+/**
+ * @author twgust
+ */
 public enum MessageType {
     TEXT,
     IMAGE,

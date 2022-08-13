@@ -1,6 +1,7 @@
 package server.controller;
 
 import entity.*;
+import server.Entity.Client;
 import server.ServerInterface.*;
 import server.controller.Buffer.ClientBuffer;
 import server.controller.Buffer.MessageBuffer;
@@ -69,7 +70,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     private ThreadPoolExecutor masterThreadPool;
     private ThreadPoolExecutor messageReceiverThreadPool;
     private ThreadPoolExecutor objectSenderPool;
-    private ThreadPoolExecutor server;
+    private ThreadPoolExecutor serverConnSingleThread;
     // when calling a function of the reference the implementations fire
 
 
@@ -139,15 +140,16 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
         userSetProducer = new UserSetProducer(logger, userBuffer, userSetProducedEvent);
         serverConnection = new ServerConnection(logger, clientBuffer, userConnectionEvent);
         clientHandler = new ClientHandlerThread(logger, messageReceivedEvent, userConnectionEvent);
-        objectSenderThread = new ObjectSenderThread(logger, sendablesBuffer, clientBuffer, userBuffer, messageBuffer);
-
+        objectSenderThread = new ObjectSenderThread(logger, sendablesBuffer, clientBuffer, userBuffer, messageBuffer, userConnectionEvent);
         configureExecutors();
 
 
         serverConnection.startServer();
         clientHandler.start();
         objectSenderThread.start();
-    }
+
+        }
+
 
     /**
      * @author twgust
@@ -166,19 +168,17 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
      * 4) Object sender has a thread pool which it uses to concurrently send messages to clients
      */
     private void configureExecutors() {
-        masterThreadPool = createThreadPool("ThreadPool - MASTER", 0, 10, new SynchronousQueue<>());
-
-        server = createThreadPool("ServerThread - Main", 1, 1, new LinkedBlockingQueue<>());
-        serverConnection.setSingleThreadExecutor(server);
-
+        masterThreadPool = createThreadPool("ThreadPool - MASTER", 0, 50, new SynchronousQueue<>());
+        objectSenderPool = createThreadPool("ThreadPool - ObjectSender", 0, 50, new SynchronousQueue<>());
+        serverConnSingleThread = createThreadPool("ServerThread - Main", 1, 1, new LinkedBlockingQueue<>());
         clientHandlerSingleThread = createThreadPool("SingleThread - ClientHandlerMain", 1, 1, new LinkedBlockingQueue<>());
+        messageReceiverThreadPool = createThreadPool("ThreadPool - MessageReceiver", 0, 25, new SynchronousQueue<>());
+
+        serverConnection.setSingleThreadExecutor(serverConnSingleThread);
         clientHandler.setSingleThreadExecutor(clientHandlerSingleThread);
-        messageReceiverThreadPool = createThreadPool("ThreadPool - ClientHandler", 0, 25, new SynchronousQueue<>());
         clientHandler.setThreadPoolExecutor(messageReceiverThreadPool);
-
-        objectSenderPool = createThreadPool("ThreadPool - ObjectSender", 0, 25, new SynchronousQueue<>());
         objectSenderThread.setThreadPoolExecutor(objectSenderPool);
-
+        userSetProducer.setSingleThreadExecutor(masterThreadPool);
     }
 
     /**
@@ -196,7 +196,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
 
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, " <<THREAD: "+name + "[t=" + integer.getAndIncrement() + "]>> ");
+                return new Thread(r, " <<THREAD: " + name + "[t=" + integer.getAndIncrement() + "]>> ");
             }
         });
     }
@@ -210,12 +210,15 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     @Override
     public void onUserConnectListener(User user) {
         synchronized (this) {
-            String logUserConnectionMsg = Thread.currentThread().getName() + "\nUser:" + user.getUsername() + "connected to the server!\n" +
+            Client client = clientBuffer.get(user);
+            System.out.println("okokokOK!");
+            String logUserConnectionMsg = Thread.currentThread().getName() +
+                    "\nUser:" + user.getUsername() + "connected to the server!\n" +
                     "updating UserSet and enqueuing client for processing";
-
+            logger.logEvent(Level.INFO, logUserConnectionMsg, LocalTime.now());
             userBuffer.put(user);
             masterThreadPool.submit(() -> userSetProducer.updateUserSet(user, ConnectionEventType.Connected));
-            masterThreadPool.submit(() -> clientHandler.queueClientForProcessing(clientBuffer.get(user)));
+            masterThreadPool.submit(() -> clientHandler.queueClientForProcessing(client));
         }
     }
 
@@ -226,26 +229,22 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     @Override
     public void onUserDisconnectListener(User user) {
         synchronized (this) {
-            masterThreadPool.submit(() -> {
                 try {
+                    System.out.println("ONUSERDISCONNECT START");
                     String userDisconnectMsg = Thread.currentThread().getName()
                             + "\nUser: " + user.getUsername() + " disconnected from the server!";
-
                     logger.logEvent(Level.WARNING, userDisconnectMsg, LocalTime.now());
-
-                    logger.logEvent(Level.INFO, Thread.currentThread().getName()
-                                    + "\nupdating data structures...",
-                                    LocalTime.now());
 
                     userBuffer.remove(user);
                     clientBuffer.removeUser(user);
-                    masterThreadPool.submit(() -> userSetProducer.updateUserSet(user, ConnectionEventType.Disconnected));
+                    userSetProducer.updateUserSet(user, ConnectionEventType.Disconnected);
+
+                    String additionalDisconnectMsg = Thread.currentThread().getName() + "\nremoved [" + user + "] from buffers...";
+                    logger.logEvent(Level.INFO, additionalDisconnectMsg, LocalTime.now());
+                    System.out.println("ONUSERDISCONNECT END");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            });
-
-
         }
     }
 
@@ -257,12 +256,14 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     public void userSetProduced(UserSet userSet) {
         synchronized (this) {
             masterThreadPool.submit(() -> {
+                logger.logEvent(Level.INFO, Thread.currentThread().getName() + "> UserSet produced, updating clients!", LocalTime.now());
                 try {
-                    logger.logEvent(Level.INFO,Thread.currentThread().getName() + "> UserSet produced, updating clients!", LocalTime.now());
-                    sendablesBuffer.enqueueSendable(userSet);
+                    // here we use put first to prioritize the UserSet > messages
+                    sendablesBuffer.putFirst(userSet);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+
             });
         }
     }
@@ -275,15 +276,15 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     public void onMessageReceivedEvent(Message message) {
         synchronized (this) {
             masterThreadPool.submit(() -> {
-            try {
-                logger.logEvent(Level.INFO, Thread.currentThread().getName() +
-                        " enqueuing message to sendables buffer" +
-                        "\n" + message, LocalTime.now());
-                        sendablesBuffer.enqueueSendable(message);
+                try {
+                    logger.logEvent(Level.INFO, Thread.currentThread().getName() +
+                            " enqueuing message to sendables buffer" +
+                            "\n" + message, LocalTime.now());
+                    sendablesBuffer.enqueueSendable(message);
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             });
         }
     }

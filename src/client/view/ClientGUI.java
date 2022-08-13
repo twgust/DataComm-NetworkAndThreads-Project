@@ -127,11 +127,12 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
      */
     @Override
     public void usersUpdatedCallback(HashSet<User> set) {
+        System.out.println("Asdasd");
+        System.out.println(set.size() + " " + clientController.getLocalPort());
         SwingUtilities.invokeLater(()->{
-            set.parallelStream().forEach(user -> {
-                if(!listModel.contains(user)){
-                    listModel.addElement(user);
-                }
+            set.forEach(user -> {
+                listModel.clear();
+                listModel.addAll(set);
             });
         });
 

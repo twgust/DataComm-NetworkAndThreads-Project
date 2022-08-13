@@ -15,6 +15,9 @@ import java.util.Set;
  * Since HashMap isn't thread-safe we use a synchronized buffer implementation
  * to perform operations on the data structure
  */
+/**
+ * @author twgust
+ */
 public class ClientBuffer {
     private final HashMap<User, Client> clientBuffer;
 

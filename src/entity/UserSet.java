@@ -3,7 +3,9 @@ package entity;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-
+/**
+ * @author twgust
+ */
 /**
  * Object for updating the currently online users, created and sent to all connected clients through ObjectOutputStream
  * when any implementation of the UserConnectionCallback has been invoked.

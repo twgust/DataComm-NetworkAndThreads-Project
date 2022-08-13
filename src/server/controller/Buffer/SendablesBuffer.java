@@ -1,7 +1,10 @@
 package server.controller.Buffer;
 
 import entity.Sendables;
+import entity.UserSet;
 
+import java.util.ArrayDeque;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -9,21 +12,31 @@ import java.util.concurrent.LinkedBlockingQueue;
  *
  */
 public class SendablesBuffer {
-    private final LinkedBlockingQueue<Sendables> queue;
+    private final ArrayDeque<Sendables> queue;
 
     /**
      * @author twgust
      */
     public SendablesBuffer(){
-        queue = new LinkedBlockingQueue<>();
+        queue = new ArrayDeque<>();
     }
     /**
      * @author twgust
      * Queues a client according to fifo principles
-     * @param
+     * @param sendable to queue for processing.
      */
     public synchronized void enqueueSendable(Sendables sendable) throws InterruptedException {
-        queue.put(sendable);
+        queue.addLast(sendable);
+        this.notify();
+    }
+
+    /**
+     * cheat queue and put it to first, used for user connections and updated UserSet(s)
+     * @param sendables UserSet
+     * @throws InterruptedException
+     */
+    public synchronized void putFirst(Sendables sendables) throws InterruptedException {
+        queue.addFirst(sendables);
         this.notify();
     }
 

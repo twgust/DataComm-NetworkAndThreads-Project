@@ -12,30 +12,33 @@ import java.util.HashSet;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
-
+/**
+ * @author twgust
+ */
 public class UserSetProducer{
-    private final UserBuffer userBuffer;
-    private final ExecutorService service;
-    private final ProducerRunnable producer;
-
-    private Queue<User> queue;
-    private final UserSetProducedEvent userSetProducedEvent;
     private final ServerLogger logger;
+
+    private final UserSetProducedEvent userSetProducedEvent;
+    private final UserBuffer userBuffer;
+    private Queue<User> queue;
+
+    private ExecutorService service;
+
 
     public UserSetProducer(ServerLogger logger, UserBuffer userBuffer, UserSetProducedEvent event){
         this.logger = logger;
         this.userBuffer = userBuffer;
-        this.producer = new ProducerRunnable();
         this.userSetProducedEvent = event;
-        service = Executors.newSingleThreadExecutor();
-
-
+    }
+    public void setSingleThreadExecutor(ThreadPoolExecutor singleThreadExecutor){
+        this.service = singleThreadExecutor;
     }
     public synchronized void updateUserSet(User user, ConnectionEventType type){
         switch (type){
             case Connected -> service.execute(()->{
                 HashSet<User> userHashSet = userBuffer.getHashSet();
                 UserSet set = new UserSet(userHashSet, user,  ConnectionEventType.Connected);
+                System.out.println("SIZE " + set.getUserSet().size());
                 userSetProducedEvent.userSetProduced(set);
             });
             case Disconnected -> service.execute(()->{
@@ -43,42 +46,6 @@ public class UserSetProducer{
                 UserSet set = new UserSet(userHashSet, user,  ConnectionEventType.Disconnected);
                 userSetProducedEvent.userSetProduced(set);
             });
-        }
-    }
-    public synchronized void addUserToQueue(User user, ConnectionEventType type){
-        queue.add(user);
-        notify();
-    }
-    public synchronized User pollUserFromQueue() throws InterruptedException {
-        if (queue.isEmpty()){
-            wait();
-        }
-        return queue.poll();
-    }
-    public void start() {
-        queue = new LinkedBlockingQueue<>();
-        service.execute(producer);
-        System.out.println("Producer Ready");
-    }
-    public void stop() throws InterruptedException {
-        queue = null;
-        boolean res = service.awaitTermination(10, TimeUnit.SECONDS);
-    }
-    private class ProducerRunnable implements Runnable{
-        @Override
-        public void run() {
-            HashSet<User> userHashSet;
-            while(queue != null){
-                try{
-                    User user  = pollUserFromQueue();
-                    userBuffer.put(user);
-                    userHashSet = userBuffer.getHashSet();
-                    UserSet set = new UserSet(userHashSet, user,  ConnectionEventType.Connected);
-                    userSetProducedEvent.userSetProduced(set);
-                }catch (InterruptedException e){
-                    e.printStackTrace();
-                }
-            }
         }
     }
 }

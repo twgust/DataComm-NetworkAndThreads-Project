@@ -11,6 +11,9 @@ import java.io.Serializable;
  * Username AND Image
  *
  */
+/**
+ * @author twgust
+ */
 public class User extends Sendables {
     private final String username;
     private byte[] avatarBuffer;

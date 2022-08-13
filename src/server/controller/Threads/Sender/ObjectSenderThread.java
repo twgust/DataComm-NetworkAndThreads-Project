@@ -8,18 +8,17 @@ import server.controller.Buffer.MessageBuffer;
 import server.controller.Buffer.SendablesBuffer;
 import server.controller.Buffer.UserBuffer;
 import server.controller.ServerLogger;
-import server.controller.Threads.Sender.MessageCallable;
 
-import javax.sql.ConnectionEventListener;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import java.util.stream.Stream;
 
 /**
+ * @author twgust
  * Runnable for sending a message to a Client,
  * Writes to connected clients ObjectOutputStream
  */
@@ -39,9 +38,11 @@ public class ObjectSenderThread {
      * @param clientBuffer reference to buffer (final)
      * @param userBuffer   reference to buffer (final)
      */
-    public ObjectSenderThread(ServerLogger logger, SendablesBuffer buffer,ClientBuffer clientBuffer, UserBuffer userBuffer, MessageBuffer messageBuffer) {
+    public ObjectSenderThread(ServerLogger logger, SendablesBuffer buffer,ClientBuffer clientBuffer, UserBuffer userBuffer,
+                              MessageBuffer messageBuffer, UserConnectionEvent userConnectionEvent) {
         this.logger = logger;
         this.messageBuffer = messageBuffer;
+        this.listener = userConnectionEvent;
         this.clientBuffer = clientBuffer;
         this.userBuffer = userBuffer;
         this.sendablesBuffer = buffer;
@@ -52,17 +53,15 @@ public class ObjectSenderThread {
      * @param threadPoolExecutor has to be thread pool
      * @return
      */
-    public boolean setThreadPoolExecutor(ThreadPoolExecutor threadPoolExecutor){
+    public boolean setThreadPoolExecutor(ThreadPoolExecutor threadPoolExecutor) {
         this.threadPoolExecutor = threadPoolExecutor;
         assert this.threadPoolExecutor != null;
         return true;
     }
-    public void setConnectionListener(UserConnectionEvent listener){
-        this.listener = listener;
-    }
-    public synchronized void start()  {
+    public synchronized void start()   {
         while (sendablesBuffer != null) {
             try{
+
                 Sendables sendable = sendablesBuffer.dequeueSendable();
                 Message message = null;
                 UserSet userSet = null;
@@ -73,42 +72,74 @@ public class ObjectSenderThread {
                         Message finalMessage = message;
 
                         List<Client> list = new ArrayList<>();
-                        message.getRecipientList().forEach(user -> list.add(clientBuffer.get(user)));
-                        ArrayList<MessageCallable> callables = new ArrayList<>(list.size());
+                        message.getRecipientList().forEach(user -> {
+                            if(clientBuffer.get(user) == null){
+                                System.out.println(user.toString() + " appears to be offline");
+                            }
+                            else{
+                                list.add(clientBuffer.get(user));
+                            }
 
+                        });
+                        ArrayList<MessageCallable> callables = new ArrayList<>(list.size());
+                        System.out.println(list.size());
                         list.forEach(client -> {
-                            MessageCallable callable = new MessageCallable(finalMessage, client);
+                            MessageCallable callable = new MessageCallable(finalMessage, client, listener);
                             callables.add(callable);
                         });
-                        try{
-                            List<Future<Client>> resultList = threadPoolExecutor.invokeAll(callables);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+
+
+
+                        List<Future<Client>> resultList = threadPoolExecutor.invokeAll(callables, 2, TimeUnit.SECONDS);
+                            for (int i = 0; i < resultList.size(); i++) {
+                                    Future<Client> clientel = resultList.get(i);
+                                    try{
+                                        Client client = clientel.get();
+
+                                    }catch (ExecutionException e){
+                                        System.out.println(e.getCause());
+                                        e.printStackTrace();
+                                    }
+                            }
                     }
 
+
+
+
                     case UserSet -> {
+                        System.out.println("USERSET START");
                         userSet = (UserSet) sendable;
                         UserSet finalSet = userSet;
                         ArrayList<OnlineListCallable> callables = new ArrayList<>(clientBuffer.size());
+                        System.out.println(callables.size());
+
+                        // set up a collection of all the clients
                         Collection<Client> arr = clientBuffer.allValues();
+                        // for each client c,
+                        // create a OnlineListCallable(ServerLogger,Sendable, Client c) obj
+                        // add the instance to a list of callables.
                         for (Client client: arr) {
                             OnlineListCallable callable = new OnlineListCallable(logger, finalSet, client);
                             callables.add(callable);
                         }
+                        // execute all the callables and wait for result, this way we achieve concurrency in message sending
+                        // while avoiding the race condition for the clients ObjectInputStream.
+                        // No stream will ever be busy.
                         try{
-                            List<Future<Client>> resultList = threadPoolExecutor.invokeAll(callables);
+                            List<Future<Client>> resultList = threadPoolExecutor.invokeAll(callables, 2, TimeUnit.SECONDS);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+                        System.out.println("USERSET END");
                     }
 
                 }
 
-            }catch (InterruptedException e){
+            }catch (InterruptedException  e){
                 e.printStackTrace();
             }
         }
+
     }
 
 

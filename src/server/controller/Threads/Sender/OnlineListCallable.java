@@ -10,6 +10,9 @@ import java.time.LocalTime;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
+/**
+ * @author twgust
+ */
 public class OnlineListCallable implements Callable<Client> {
 
     private final ServerLogger logger;
@@ -23,7 +26,7 @@ public class OnlineListCallable implements Callable<Client> {
     }
 
     @Override
-    public Client call() throws Exception {
+    public Client call() {
         String thread = Thread.currentThread().getName();
 
         try {

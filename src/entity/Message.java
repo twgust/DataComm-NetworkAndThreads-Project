@@ -4,7 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.Serializable;
 import java.util.ArrayList;
-
+/**
+ * @author twgust
+ */
 /**
  * MESSAGE FROM CLIENT:
  * <p>

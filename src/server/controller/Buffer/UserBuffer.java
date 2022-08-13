@@ -4,7 +4,9 @@ import entity.User;
 
 import java.util.HashSet;
 import java.util.Set;
-
+/**
+ * @author twgust
+ */
 public class UserBuffer {
     private HashSet<User> onlineBuffer;
     private User user;
