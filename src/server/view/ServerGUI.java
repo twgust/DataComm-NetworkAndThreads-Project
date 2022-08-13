@@ -82,7 +82,7 @@ public class ServerGUI implements LoggerCallBack {
         frame.add(scrollPane1);
         // textArea = new JTextArea();
         frame.setLocation(750,400);
-        frame.setSize(800, 400);
+        frame.setSize(1280, 720);
         frame.setResizable(false);
         frame.setVisible(true);
         // frame.add(textArea);

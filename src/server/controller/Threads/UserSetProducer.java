@@ -8,9 +8,11 @@ import server.ServerInterface.UserSetProducedEvent;
 import server.controller.Buffer.UserBuffer;
 import server.controller.ServerLogger;
 
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 /**
  * @author twgust
@@ -20,7 +22,6 @@ public class UserSetProducer{
 
     private final UserSetProducedEvent userSetProducedEvent;
     private final UserBuffer userBuffer;
-    private Queue<User> queue;
 
     private ExecutorService service;
 
@@ -34,11 +35,14 @@ public class UserSetProducer{
         this.service = singleThreadExecutor;
     }
     public synchronized void updateUserSet(User user, ConnectionEventType type){
+        String thread = Thread.currentThread().getName();
+
+        String logUpdateUserSetMsg = "Executing -> [TASK: Produce-OnlineList] - Running";
+        logger.logEvent(Level.INFO,thread,logUpdateUserSetMsg, LocalTime.now());
         switch (type){
             case Connected -> service.execute(()->{
                 HashSet<User> userHashSet = userBuffer.getHashSet();
                 UserSet set = new UserSet(userHashSet, user,  ConnectionEventType.Connected);
-                System.out.println("SIZE " + set.getUserSet().size());
                 userSetProducedEvent.userSetProduced(set);
             });
             case Disconnected -> service.execute(()->{

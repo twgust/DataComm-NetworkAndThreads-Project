@@ -58,6 +58,11 @@ public class ObjectSenderThread {
         assert this.threadPoolExecutor != null;
         return true;
     }
+    public synchronized void startObjectSender(){
+        threadPoolExecutor.submit(()->{
+            start();
+        });
+    }
     public synchronized void start()   {
         while (sendablesBuffer != null) {
             try{
@@ -65,16 +70,20 @@ public class ObjectSenderThread {
                 Sendables sendable = sendablesBuffer.dequeueSendable();
                 Message message = null;
                 UserSet userSet = null;
-
+                String thread = Thread.currentThread().getName();
                 switch (sendable.getSendableType()) {
                     case Message -> {
                         message = (Message) sendable;
                         Message finalMessage = message;
 
+                        String logSendMessageStart = "Executing --[TASK: Send-Message, {"+ message.hashCode() + "}]";
+                        logger.logEvent(Level.INFO,thread, logSendMessageStart, LocalTime.now());
+
                         List<Client> list = new ArrayList<>();
                         message.getRecipientList().forEach(user -> {
                             if(clientBuffer.get(user) == null){
                                 System.out.println(user.toString() + " appears to be offline");
+
                             }
                             else{
                                 list.add(clientBuffer.get(user));
@@ -82,36 +91,31 @@ public class ObjectSenderThread {
 
                         });
                         ArrayList<MessageCallable> callables = new ArrayList<>(list.size());
-                        System.out.println(list.size());
                         list.forEach(client -> {
-                            MessageCallable callable = new MessageCallable(finalMessage, client, listener);
+                            MessageCallable callable = new MessageCallable(logger, finalMessage, client, listener, messageBuffer);
                             callables.add(callable);
                         });
-
-
 
                         List<Future<Client>> resultList = threadPoolExecutor.invokeAll(callables, 2, TimeUnit.SECONDS);
                             for (int i = 0; i < resultList.size(); i++) {
                                     Future<Client> clientel = resultList.get(i);
                                     try{
                                         Client client = clientel.get();
-
                                     }catch (ExecutionException e){
                                         System.out.println(e.getCause());
                                         e.printStackTrace();
                                     }
                             }
+                        String logSendMessageEnd = "[TASK: Send-Message, {"+message.hashCode()+"}]" + ">Completed!";
+                        logger.logEvent(Level.INFO,thread,logSendMessageEnd, LocalTime.now());
+                        System.out.println("\n--DIVIDER--\n");
                     }
 
-
-
-
                     case UserSet -> {
-                        System.out.println("USERSET START");
+
                         userSet = (UserSet) sendable;
                         UserSet finalSet = userSet;
                         ArrayList<OnlineListCallable> callables = new ArrayList<>(clientBuffer.size());
-                        System.out.println(callables.size());
 
                         // set up a collection of all the clients
                         Collection<Client> arr = clientBuffer.allValues();
@@ -130,7 +134,6 @@ public class ObjectSenderThread {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        System.out.println("USERSET END");
                     }
 
                 }
@@ -141,38 +144,6 @@ public class ObjectSenderThread {
         }
 
     }
-
-
-    /**
-     * Runnable to send update UserSet representing a list of online clients
-     */
-    private class ListSender implements Runnable{
-        private Sendables set;
-        private Client client;
-        public ListSender(Sendables set, Client client){
-            this.set = set;
-            this.client = client;
-        }
-        @Override
-        public void run() {
-            String thread = Thread.currentThread().getName();
-            System.out.println("LISTSENDER " + thread);
-            try {
-                ObjectOutputStream oos;
-                oos = client.getOos();
-                oos.writeObject(set);
-                oos.flush();
-                oos.reset();
-
-            } catch (IOException  e) {
-                String logClientUpdateException = thread + " " + " ";
-                logger.logEvent(Level.WARNING, logClientUpdateException, LocalTime.now());
-                e.printStackTrace();
-            }
-            System.out.println("LISTSENDER END " + thread);
-        }
-    }
-
     private String getThreadName(Thread thread){
         return thread.getName().toString();
     }

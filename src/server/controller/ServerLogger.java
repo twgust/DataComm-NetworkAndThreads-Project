@@ -23,8 +23,8 @@ public class ServerLogger {
         date = new Date();
         fw = new FileWriter("log/"+date.getTime()+".txt");
     }
-    public void logEvent(Level level, String info, LocalTime time) {
-        String builtString = buildString(level, info, time);
+    public synchronized void logEvent(Level level,String thread, String info, LocalTime time) {
+        String builtString = buildString(level, thread, info, time);
         loggerCallback.logInfoToGui(builtString, level);
         try{
             logEventToFile(builtString);
@@ -36,13 +36,13 @@ public class ServerLogger {
         fw.write(info);
         fw.flush();
     }
-    private String buildString(Level level, String info, LocalTime time){
+    private synchronized String buildString(Level level,String thread, String info, LocalTime time){
         builder = new StringBuilder();
         return builder.append("SERVER: [").append(time.getHour()).append(':')
                 .append(time.getMinute()).append(':')
                 .append(time.getSecond()).append(']').append(' ')
-                .append('(').append(level.getName()).append(')').append(" ")
-                .append(info).append("\n\n").toString();
+                .append(' ').append(level.getName()).append(' ').append(" ")
+                .append(thread).append(" - - - - - ").append(info).append("\n\n").toString();
     }
 
     public void setLoggerCallback(LoggerCallBack impl) {

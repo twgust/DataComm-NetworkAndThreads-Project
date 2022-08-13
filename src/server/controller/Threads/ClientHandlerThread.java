@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.SocketException;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
@@ -56,7 +55,7 @@ public class ClientHandlerThread {
         return this.clientHandlerMainExec.getCorePoolSize() <= 1;
     }
 
-    public void start(){
+    public void startClientHandler(){
         clientHandlerMainExec.execute(clientHandlerThread);
     }
 
@@ -92,12 +91,15 @@ public class ClientHandlerThread {
         public void run() {
             while(true){
                 try{
+                    String thread = Thread.currentThread().getName();
                     //log the event
-                    String logThreadAssignerWaitingMsg = Thread.currentThread().getName() + " ready for new client!";
-                    logger.logEvent(Level.INFO, logThreadAssignerWaitingMsg, LocalTime.now());
+                    String logThreadAssignerWaitingMsg = "Executing -> [TASK: Assign-Thread, STATE:RUNNING]" +
+                            "\n>ready for new client!";
+                    logger.logEvent(Level.INFO, thread,logThreadAssignerWaitingMsg, LocalTime.now());
 
                     // fetch client from front of queue
                     Client client = processClient();
+                    String ip = "[" +  client.getSocket().getLocalAddress().toString() + ":" + client.getSocket().getLocalPort() + "]";
 
                     // debug
                     // assign a thread to the client which will listen to incoming messages
@@ -107,9 +109,10 @@ public class ClientHandlerThread {
 
 
                     // log the event
-                    String logThreadAssignedMsg = Thread.currentThread().getName() + " Assigned MessageReceiver Thread to client @ "
-                            + client.getSocket().getRemoteSocketAddress().toString();
-                    logger.logEvent(Level.INFO, logThreadAssignedMsg, LocalTime.now());
+                    String logThreadAssignedMsg ="Executed -> [Task: Assign-Thread" + client.getUser() + ", STATE:FINISHED]" +
+                            "\n>assigned MessageReceiver-Thread to client @ " + ip;
+
+                    logger.logEvent(Level.INFO,thread, logThreadAssignedMsg, LocalTime.now());
 
                 } catch (InterruptedException  e){e.printStackTrace();}
             }
@@ -133,7 +136,7 @@ public class ClientHandlerThread {
         public MessageReceiverThread(Client client, ServerLogger logger ) {
             this.logger = logger;
             this.client = client;
-            ip = client.getSocket().getRemoteSocketAddress().toString();
+            ip = "[" +  client.getSocket().getLocalAddress() + ":" + client.getSocket().getLocalPort() + "]";
             ois = client.getOis();
         }
         public void addListener(MessageReceivedEvent listener){
@@ -145,22 +148,21 @@ public class ClientHandlerThread {
                 try {
                     Object o = ois.readObject();
                     if (o instanceof Message) {
+                        String thread = Thread.currentThread().getName();
+
                         Message message = (Message) o;
-                        String logMessageReceived = Thread.currentThread().getName()
-                                + "\n--Message received from @ " + ip + "!"
-                                + "\n---" + message.getAuthor() + " " + message.getType();
-                        logger.logEvent(Level.INFO, logMessageReceived, LocalTime.now());
+
+                        String logMessageReceived = "Executing -> [TASK: Receive-Message]" +
+                                "\n>notifying controller...";
+                        logger.logEvent(Level.INFO,thread, logMessageReceived, LocalTime.now());
                         listener.onMessageReceivedEvent(message);
                     }
                 } catch (ClassNotFoundException | IOException e) {
-
                     if (e instanceof SocketException){
-                      //  userConnectionEvent.onUserDisconnectListener(client.getUser());
                         System.out.println("closed");
                         e.printStackTrace();
                         break;
                     }
-                    //userConnectionEvent.onUserDisconnectListener(client.getUser());
                 }
             }
         }

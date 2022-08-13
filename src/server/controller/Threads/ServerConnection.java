@@ -43,27 +43,32 @@ public class ServerConnection implements Runnable{
         try {
             ServerSocket serverSocket = null;
             String logStartServerMsg;
+            String thread = Thread.currentThread().getName();
+
             while(serverSocket == null){
                 try{
                     int newPort =  Integer.parseInt(JOptionPane.showInputDialog(null, "enter new port"));
                     // log to server gui
                     logStartServerMsg = "attempting to initialize server on port: [" + newPort + "]";
-                    logger.logEvent(Level.INFO, logStartServerMsg, LocalTime.now());
+                    logger.logEvent(Level.INFO,thread, logStartServerMsg, LocalTime.now());
                     serverSocket = new ServerSocket(newPort);
 
                 }catch (BindException e){
                     logStartServerMsg = "attempt failed, port is busy";
-                    logger.logEvent(Level.WARNING, logStartServerMsg, LocalTime.now());
+                    logger.logEvent(Level.WARNING,thread, logStartServerMsg, LocalTime.now());
                 }
             }
-            String logServerRunningMsg = " server running on port: [" + serverSocket.getLocalPort() + "]";
-            logger.logEvent(Level.INFO, logServerRunningMsg, LocalTime.now());
+            String logServerRunningMsg = "server running on port: [" + serverSocket.getLocalPort() + "]";
+            logger.logEvent(Level.INFO,thread, logServerRunningMsg, LocalTime.now());
 
 
                 // multithreaded server, one iteration = one client processed
                 while(true){
                     Socket clientSocket = serverSocket.accept();
                     // start timer after client connection accepted
+                    String ip = "[" +  clientSocket.getLocalAddress().toString() + ":" + clientSocket.getLocalPort() + "]";
+                    String logNewClientConnectionStart = thread + " Executing -> [TASK: CLIENT-CONNECTION, STATE: RUNNING]" +
+                            "\n new connection from: " + ip;
                     long start = System.currentTimeMillis();
 
                     InputStream is = clientSocket.getInputStream();
@@ -101,16 +106,12 @@ public class ServerConnection implements Runnable{
 
                         // log to server gui
                         long end = (System.currentTimeMillis() - start);
-                        String logClientTimeToConnectMsg = "finished processing client [" + clientSocket.getLocalAddress() + "] in " + end + "ms";
-                        logger.logEvent(Level.INFO, logClientTimeToConnectMsg, LocalTime.now());
-
-                        // log to server gui
-                       // String logUserConnectedMsg = user.getUsername() + " connected to server";
-                     //   logger.logEvent(Level.INFO, logUserConnectedMsg, LocalTime.now());
+                        String logNewClientConnectionEnd =  "Executing -> [TASK: CLIENT-CONNECTION, STATE:RUNNING]" +
+                                "\n>finished processing client [" + ip + "] in " + end + "ms";
+                        logger.logEvent(Level.INFO,thread, logNewClientConnectionEnd, LocalTime.now());
 
                         // step 6) fire implementation of userConnectionCallback
                         userConnectionEvent.onUserConnectListener(user);
-
                     }
                 }
             }

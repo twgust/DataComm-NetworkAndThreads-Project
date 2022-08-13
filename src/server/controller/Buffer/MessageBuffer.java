@@ -11,11 +11,7 @@ import java.util.concurrent.FutureTask;
  * Since
  */
 public class MessageBuffer {
-    public LinkedList<FutureTask> getMessages() {
-        return messages;
-    }
-
-    private final LinkedList<FutureTask> messages;
+    private final LinkedList<Message> messages;
 
     public MessageBuffer( ){
         messages = new LinkedList<>();
@@ -25,7 +21,7 @@ public class MessageBuffer {
      * @return Returns a message from buffer according to fifo principle
      * @throws InterruptedException if thread is interrupted
      */
-    public synchronized FutureTask getMessage() throws InterruptedException {
+    public synchronized Message getMessage() throws InterruptedException {
         if(messages.isEmpty()){
             wait();
         }
@@ -36,8 +32,12 @@ public class MessageBuffer {
      * Adds a message to the back of the queue, fifo
      * @param message message to queue
      */
-    public synchronized void queueMessage(FutureTask message){
+    public synchronized void queueMessage(Message message){
         messages.addLast(message);
         notifyAll();
+    }
+
+    public LinkedList<Message> getMessages() {
+        return messages;
     }
 }

@@ -145,8 +145,8 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
 
 
         serverConnection.startServer();
-        clientHandler.start();
-        objectSenderThread.start();
+        clientHandler.startClientHandler();
+        objectSenderThread.startObjectSender();
 
         }
 
@@ -168,11 +168,11 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
      * 4) Object sender has a thread pool which it uses to concurrently send messages to clients
      */
     private void configureExecutors() {
-        masterThreadPool = createThreadPool("ThreadPool - MASTER", 0, 50, new SynchronousQueue<>());
-        objectSenderPool = createThreadPool("ThreadPool - ObjectSender", 0, 50, new SynchronousQueue<>());
-        serverConnSingleThread = createThreadPool("ServerThread - Main", 1, 1, new LinkedBlockingQueue<>());
-        clientHandlerSingleThread = createThreadPool("SingleThread - ClientHandlerMain", 1, 1, new LinkedBlockingQueue<>());
-        messageReceiverThreadPool = createThreadPool("ThreadPool - MessageReceiver", 0, 25, new SynchronousQueue<>());
+        masterThreadPool = createThreadPool("ThreadPool - ServerController           ", 0, 50, new SynchronousQueue<>());
+        objectSenderPool = createThreadPool("ThreadPool -  ObjectSender               ", 0, 50, new SynchronousQueue<>());
+        serverConnSingleThread = createThreadPool("SingleThread - ServerConnection     ", 1, 1, new LinkedBlockingQueue<>());
+        clientHandlerSingleThread = createThreadPool("SingleThread - ClientHandlerMain     ", 1, 1, new LinkedBlockingQueue<>());
+        messageReceiverThreadPool = createThreadPool("ThreadPool - MessageReceiver        ", 0, 25, new SynchronousQueue<>());
 
         serverConnection.setSingleThreadExecutor(serverConnSingleThread);
         clientHandler.setSingleThreadExecutor(clientHandlerSingleThread);
@@ -196,7 +196,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
 
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, " <<THREAD: " + name + "[t=" + integer.getAndIncrement() + "]>> ");
+                return new Thread(r, " <<"+ name + " [T=" + integer.getAndIncrement() + "]>>");
             }
         });
     }
@@ -211,14 +211,15 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     public void onUserConnectListener(User user) {
         synchronized (this) {
             Client client = clientBuffer.get(user);
-            System.out.println("okokokOK!");
-            String logUserConnectionMsg = Thread.currentThread().getName() +
-                    "\nUser:" + user.getUsername() + "connected to the server!\n" +
-                    "updating UserSet and enqueuing client for processing";
-            logger.logEvent(Level.INFO, logUserConnectionMsg, LocalTime.now());
+
             userBuffer.put(user);
             masterThreadPool.submit(() -> userSetProducer.updateUserSet(user, ConnectionEventType.Connected));
             masterThreadPool.submit(() -> clientHandler.queueClientForProcessing(client));
+
+            String thread = Thread.currentThread().getName();
+            String ip = "[" +  client.getSocket().getLocalAddress().toString() + ":" + client.getSocket().getLocalPort() + "]";
+            String logUserConnectionMsg ="[TASK:UserConnection " + user + "]" + " >Completed!";
+            logger.logEvent(Level.INFO, thread, logUserConnectionMsg, LocalTime.now());
         }
     }
 
@@ -231,16 +232,17 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
         synchronized (this) {
                 try {
                     System.out.println("ONUSERDISCONNECT START");
-                    String userDisconnectMsg = Thread.currentThread().getName()
-                            + "\nUser: " + user.getUsername() + " disconnected from the server!";
-                    logger.logEvent(Level.WARNING, userDisconnectMsg, LocalTime.now());
+                    String thread = Thread.currentThread().getName();
+
+                    String userDisconnectMsg = "Executing -> [TASK=DisconnectClient" + user + "]";
+                    logger.logEvent(Level.WARNING, thread,userDisconnectMsg, LocalTime.now());
 
                     userBuffer.remove(user);
                     clientBuffer.removeUser(user);
-                    userSetProducer.updateUserSet(user, ConnectionEventType.Disconnected);
+                    masterThreadPool.submit(()-> userSetProducer.updateUserSet(user, ConnectionEventType.Disconnected));
 
-                    String additionalDisconnectMsg = Thread.currentThread().getName() + "\nremoved [" + user + "] from buffers...";
-                    logger.logEvent(Level.INFO, additionalDisconnectMsg, LocalTime.now());
+                    String additionalDisconnectMsg = "Executed -> [TASK:DisconnectClient" + user + "]";
+                    logger.logEvent(Level.INFO,thread, additionalDisconnectMsg, LocalTime.now());
                     System.out.println("ONUSERDISCONNECT END");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -256,9 +258,11 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     public void userSetProduced(UserSet userSet) {
         synchronized (this) {
             masterThreadPool.submit(() -> {
-                logger.logEvent(Level.INFO, Thread.currentThread().getName() + "> UserSet produced, updating clients!", LocalTime.now());
+                String thread = Thread.currentThread().getName();
+                String infoMsg = " Executed -> [TASK: Produce-OnlineList] - FINISHED"
+                        + "\n>placing updated UserSet first in buffer";
+                logger.logEvent(Level.INFO, thread , infoMsg, LocalTime.now());
                 try {
-                    // here we use put first to prioritize the UserSet > messages
                     sendablesBuffer.putFirst(userSet);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -277,9 +281,10 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
         synchronized (this) {
             masterThreadPool.submit(() -> {
                 try {
-                    logger.logEvent(Level.INFO, Thread.currentThread().getName() +
-                            " enqueuing message to sendables buffer" +
-                            "\n" + message, LocalTime.now());
+                    String thread = Thread.currentThread().getName();
+
+                    logger.logEvent(Level.INFO, thread, "Executing -> [TASK: Queue-Message]" +
+                            "\n>enqueuing message received from [" + message.getAuthor()  +  "] to buffer",  LocalTime.now());
                     sendablesBuffer.enqueueSendable(message);
 
                 } catch (InterruptedException e) {
@@ -309,11 +314,11 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
         } else if (e instanceof EOFException) {
             // log to server gui
             String logEndOfFileMsg = "Client: EOF exception for " + user.getUsername() + " in " + methodName;
-            logger.logEvent(Level.WARNING, logEndOfFileMsg, LocalTime.now());
+            e.printStackTrace();
         } else {
             // log to server gui
             String logUnhandledExceptionMsg = "UNHANDLED EXCEPTION\n" + e.getMessage();
-            logger.logEvent(Level.WARNING, logUnhandledExceptionMsg, LocalTime.now());
+            e.printStackTrace();
         }
     }
 }

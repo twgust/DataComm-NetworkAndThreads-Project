@@ -5,6 +5,8 @@ import entity.MessageType;
 import server.Entity.Client;
 import server.RunServer;
 import server.ServerInterface.UserConnectionEvent;
+import server.controller.Buffer.MessageBuffer;
+import server.controller.ServerLogger;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -12,16 +14,25 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.time.LocalTime;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 
 public class MessageCallable implements Callable<Client> {
+    private final ServerLogger logger;
+
     private final Message message;
-    private Client client;
+    private final Client client;
+
     private final UserConnectionEvent userConnectionEvent;
-    public MessageCallable(Message message, Client client, UserConnectionEvent event) {
+    private final MessageBuffer messageBuffer;
+    public MessageCallable(ServerLogger logger, Message message, Client client, UserConnectionEvent event, MessageBuffer messageBuffer) {
+        this.logger = logger;
         this.message = message;
         this.client = client;
         this.userConnectionEvent = event;
+        this.messageBuffer = messageBuffer;
+
     }
 
     /**
@@ -34,15 +45,20 @@ public class MessageCallable implements Callable<Client> {
         ObjectOutputStream oos;
         oos = client.getOos();
         System.out.println(message.getAuthor() + ": " + message.getTextMessage() + " --> " + client.getUser().getUsername());
-            switch (message.getType()) {
+        String thread = Thread.currentThread().getName();
+        String logFailedMessage = "IOException encountered in ---[TASK Send-Message{"+ message.hashCode() +"}]" +
+                "\n>CAUSE: M={hashcode=" + message.hashCode() + "} could not be sent to [" + client.getUser()+"] due to an IOException" +
+                "\n>ACTION: queueing unsendable to message buffer and disconnecting client";
+        switch (message.getType()) {
                 case TEXT -> {
-                    String threadName = Thread.currentThread().getName();
                     try{
 
                         oos.writeObject(message);
                         oos.flush();
                         oos.reset();
                     }catch (IOException e){
+                        logger.logEvent(Level.WARNING, thread, "\n\n{\n" + logFailedMessage + "\n}\n\n", LocalTime.now());
+                        messageBuffer.queueMessage(message);
                         userConnectionEvent.onUserDisconnectListener(client.getUser());
                     }
                     return client;
@@ -65,6 +81,11 @@ public class MessageCallable implements Callable<Client> {
                         oos.reset();
 
                     }catch (IOException e){
+
+
+                        logger.logEvent(Level.WARNING, thread, logFailedMessage, LocalTime.now());
+
+                        messageBuffer.queueMessage(message);
                         userConnectionEvent.onUserDisconnectListener(client.getUser());
                         e.printStackTrace();
                     }
@@ -89,6 +110,8 @@ public class MessageCallable implements Callable<Client> {
                         oos.reset();
 
                     }catch (IOException e){
+                        logger.logEvent(Level.WARNING, thread, logFailedMessage, LocalTime.now());
+                        messageBuffer.queueMessage(message);
                         userConnectionEvent.onUserDisconnectListener(client.getUser());
                         e.printStackTrace();
                     }

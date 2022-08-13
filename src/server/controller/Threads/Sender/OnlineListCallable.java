@@ -28,18 +28,20 @@ public class OnlineListCallable implements Callable<Client> {
     @Override
     public Client call() {
         String thread = Thread.currentThread().getName();
+        String ip = client.getSocket().getLocalAddress().toString() + ":" + client.getSocket().getLocalPort();
+        logger.logEvent(Level.INFO,thread ,"Executing ---[ TASK: UPDATE-OnlineLists " + client.getUser() + "]", LocalTime.now());
 
         try {
             ObjectOutputStream oos;
             oos = client.getOos();
             oos.writeObject(set);
             oos.flush();
-            logger.logEvent(Level.INFO, " updated online lists for " + client.getUser().getUsername(), LocalTime.now());
             oos.reset();
+            logger.logEvent(Level.INFO,thread ,"[TASK: UPDATE-OnlineLists, " + client.getUser() + "] >Completed",LocalTime.now());
             return client;
         } catch (IOException e) {
-            String logClientUpdateException = thread + " " + " ";
-            logger.logEvent(Level.WARNING, logClientUpdateException, LocalTime.now());
+            String logClientUpdateException ="IOException encountered in ---[TASK: UPDATE-OnlineLists]";
+            logger.logEvent(Level.WARNING, thread, logClientUpdateException, LocalTime.now());
             e.printStackTrace();
             return null;
         }
