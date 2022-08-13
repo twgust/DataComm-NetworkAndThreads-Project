@@ -7,10 +7,11 @@
     <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/RunClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/RunClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/controller/ClientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/view/ClientGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/view/ClientGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/Entity/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/Entity/Client.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/RunServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/RunServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/ServerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server/controller/Threads/Sender/MessageCallable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Threads/Sender/MessageCallable.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/Threads/Sender/OnlineListCallable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Threads/Sender/OnlineListCallable.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -159,7 +160,7 @@
       <workItem from="1660305605687" duration="8504000" />
       <workItem from="1660317441277" duration="22158000" />
       <workItem from="1660379555089" duration="18621000" />
-      <workItem from="1660401351509" duration="1038000" />
+      <workItem from="1660401351509" duration="4112000" />
     </task>
     <servers />
   </component>

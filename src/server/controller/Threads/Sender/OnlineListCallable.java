@@ -37,20 +37,16 @@ public class OnlineListCallable implements Callable<Client> {
             oos.writeObject(set);
             oos.flush();
             oos.reset();
+
             logger.logEvent(Level.INFO, thread, "[TASK: UPDATE-OnlineLists, " + client.getUser() + "] >Completed", LocalTime.now());
-
-
             return client;
+
         } catch (IOException e) {
             String logClientUpdateException = "IOException encountered in ---[TASK: UPDATE-OnlineLists]";
             logger.logEvent(Level.WARNING, thread, logClientUpdateException, LocalTime.now());
-
-
             e.printStackTrace();
             return null;
         }
-
-
     }
 }
 

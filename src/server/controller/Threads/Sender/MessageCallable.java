@@ -4,7 +4,6 @@ import entity.Message;
 import entity.MessageType;
 import entity.User;
 import server.Entity.Client;
-import server.RunServer;
 import server.ServerInterface.UserConnectionEvent;
 import server.controller.Buffer.MessageBuffer;
 import server.controller.ServerLogger;
@@ -14,10 +13,12 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
+/**
+ * @author twgust
+ */
 public class MessageCallable implements Callable<Client> {
     private final ServerLogger logger;
 
@@ -74,12 +75,11 @@ public class MessageCallable implements Callable<Client> {
                 assert message.getImage() != null;
 
                 try {
-
-
                     ByteArrayInputStream bais = new ByteArrayInputStream(byteBuffer);
                     BufferedImage img = ImageIO.read(bais);
                     ImageIO.write(img, "jpg", new File("/images/" + message.hashCode() +".jpg"));
                     bais.close();
+
                     oos.writeObject(message);
                     oos.flush();
                     oos.reset();
@@ -87,10 +87,18 @@ public class MessageCallable implements Callable<Client> {
 
                 } catch (IOException e) {
                     logger.logEvent(Level.WARNING, thread, logFailedMessage, LocalTime.now());
-                    ArrayList<User> recipient = new ArrayList(1);
+
+                    // creates a new message object, with a recipient list only containing ...
+                    // the disconnected user who triggered this catch block
+                    ArrayList<User> recipient = new ArrayList<>(1);
                     recipient.add(client.getUser());
-                    messageBuffer.put(new Message(message.getImage(), message.getAuthor(), recipient, MessageType.IMAGE), client.getUser());
-                    //  messageBuffer.queueMessage(message);
+                    Message newMessage = new Message(message.getImage(), message.getAuthor(), recipient, MessageType.IMAGE);
+
+                    // put the message to the buffer of messages which failed to send
+                    // K= Message, V = User: who dropped connection
+                    messageBuffer.put(newMessage, client.getUser());
+
+                    // fire onUserDisconnectEvent
                     userConnectionEvent.onUserDisconnectListener(client.getUser());
                     e.printStackTrace();
                     return null;
@@ -104,20 +112,27 @@ public class MessageCallable implements Callable<Client> {
 
                     ByteArrayInputStream bais = new ByteArrayInputStream(byteBuffer);
                     BufferedImage img = ImageIO.read(bais);
-
                     ImageIO.write(img, "jpg", new File("images/" + message.hashCode() +".jpg"));
-                    bais.close();
 
+                    bais.close();
                     oos.writeObject(message);
                     oos.flush();
                     oos.reset();
                     return client;
                 } catch (IOException e) {
                     logger.logEvent(Level.WARNING, thread, logFailedMessage, LocalTime.now());
-                    //messageBuffer.queueMessage(message);
+
+                    // creates a new message object, with a recipient list only containing ...
+                    // the disconnected user who triggered this catch block
                     ArrayList<User> recipient = new ArrayList(1);
                     recipient.add(client.getUser());
-                    messageBuffer.put(new Message(message.getTextMessage(), message.getImage(), message.getAuthor(), recipient, MessageType.TEXT_IMAGE), client.getUser());
+                    Message newMessage = new Message(message.getTextMessage(), message.getImage(), message.getAuthor(), recipient, MessageType.TEXT_IMAGE);
+
+                    // put the message to the buffer of messages which failed to send
+                    // K= Message, V = User: who dropped connection
+                    messageBuffer.put(newMessage, client.getUser());
+
+                    // call onUserDisconnect
                     userConnectionEvent.onUserDisconnectListener(client.getUser());
                     e.printStackTrace();
                     return null;

@@ -76,14 +76,13 @@ public class RunClient {
             g4.sendMessage("BBB", "", MessageType.TEXT);
             g4.sendMessage("BBB", "", MessageType.TEXT);
             g4.sendMessage("BBB", "", MessageType.TEXT);
-            g4.sendMessage("BBB", "src/client/images/cat.jpg", MessageType.TEXT_IMAGE);
             g4.sendMessage("BBB", "", MessageType.TEXT);
-            g4.sendMessage("BBB", "src/client/images/cat.jpg", MessageType.TEXT_IMAGE);
         });
         threadpool.submit(() -> {
             try{
                 Thread.sleep(2500);
                 g1.connect("user-6", "src/client/images/circle_of_fifths.jpg");
+                Thread.sleep(50);
                 g5.sendMessage("CCC", null, MessageType.TEXT);
                 g5.sendMessage("CCC", null, MessageType.TEXT);
                 g5.sendMessage("CCC", null, MessageType.TEXT);

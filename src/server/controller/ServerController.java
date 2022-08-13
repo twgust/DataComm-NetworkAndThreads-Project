@@ -148,7 +148,6 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
         serverConnection.startServer();
         clientHandler.startClientHandler();
         objectSenderThread.startObjectSender();
-
         }
 
 

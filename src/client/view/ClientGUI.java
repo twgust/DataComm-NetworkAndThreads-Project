@@ -14,6 +14,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -145,8 +147,7 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
     public void textMessageReceived(Message message, LocalTime timeNow) {
         SwingUtilities.invokeLater(()->{
             System.out.println(message.getTextMessage());
-            textAreaChat.append(LocalTime.now() + ": " + message.getAuthor().getUsername() + ": " + message.getTextMessage() + "\n");
-        });
+            textAreaChat.append(timeNow.now().getHour() +":" + timeNow.now().getMinute()+ ":" + timeNow.now().getSecond()+ " >" + message.getAuthor().getUsername() + ": " + message.getTextMessage() + " [" + message.getType() +"]\n");        });
     }
     /**
      * @param message fires when message.getType() returns Image
@@ -155,7 +156,9 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
     public void imageMessageReceived(Message message, LocalTime timeNow) {
         ImageIcon img = byteArrToImageIcon(message.getImage());
         User author = message.getAuthor();
-
+        textAreaChat.append(timeNow.now().getHour() +":" + timeNow.now().getMinute()+ ":" + timeNow.now().getSecond()+
+                " >" + message.getAuthor().getUsername() + ": " + message.getTextMessage() +
+                " [" + message.getType() +  ", Size="+ message.getImage().length+" bytes]\n");
     }
     /**
      * @param message fires when message.getType() returns TEXT_IMAGE
@@ -163,7 +166,12 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
     @Override
     public void txtAndImgMessageReceived(Message message, LocalTime timeNow) {
         SwingUtilities.invokeLater(()->{
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
             ImageIcon img = byteArrToImageIcon(message.getImage());
+            textAreaChat.append(timeNow.now().getHour() +":" + timeNow.now().getMinute()+ ":" + timeNow.now().getSecond()+
+                    " >" + message.getAuthor().getUsername() + ": " + message.getTextMessage() + "" +
+                    " [" + message.getType() +  ", Size="+ message.getImage().length+" bytes]\n");
+
             String text = message.getTextMessage();
             User author = message.getAuthor();
             JOptionPane.showMessageDialog(null, img);
