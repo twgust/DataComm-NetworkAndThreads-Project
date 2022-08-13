@@ -11,10 +11,10 @@ import java.util.List;
  * @author twgust
  * Class for saving and fetching messages that weren't able to be sent due to some IOException between client-server
  */
-public class MessageBuffer {
+public class UnsentMessageBuffer {
     private final HashMap<Message, User> messages;
 
-    public MessageBuffer( ){
+    public UnsentMessageBuffer( ){
         messages = new HashMap<>();
     }
 

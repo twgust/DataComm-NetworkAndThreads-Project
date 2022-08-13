@@ -4,8 +4,8 @@ import entity.*;
 import server.Entity.Client;
 import server.ServerInterface.*;
 import server.controller.Buffer.ClientBuffer;
-import server.controller.Buffer.MessageBuffer;
-import server.controller.Buffer.SendablesBuffer;
+import server.controller.Buffer.UnsentMessageBuffer;
+import server.controller.Buffer.SendableBuffer;
 import server.controller.Buffer.UserBuffer;
 import server.controller.Threads.ClientHandlerThread;
 import server.controller.Threads.ObjectSenderThread;
@@ -54,8 +54,8 @@ import java.util.logging.Level;
 
 public class ServerController implements UserConnectionEvent, MessageReceivedEvent, UserSetProducedEvent {
     // Buffers
-    private final SendablesBuffer sendablesBuffer;
-    private final MessageBuffer messageBuffer;
+    private final SendableBuffer sendableBuffer;
+    private final UnsentMessageBuffer unsentMessageBuffer;
     private final ClientBuffer clientBuffer;
     private final UserBuffer userBuffer;
     private final ServerLogger logger;
@@ -80,8 +80,8 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
      * Constructor, intializes the buffers and logger.
      */
     public ServerController() throws IOException {
-        sendablesBuffer = new SendablesBuffer();
-        messageBuffer = new MessageBuffer();
+        sendableBuffer = new SendableBuffer();
+        unsentMessageBuffer = new UnsentMessageBuffer();
         clientBuffer = new ClientBuffer();
         userBuffer = new UserBuffer();
         logger = new ServerLogger();
@@ -138,7 +138,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
         userSetProducer = new UserSetProducer(logger, userBuffer, userSetProducedEvent);
         serverConnection = new ServerConnection(logger, clientBuffer, userConnectionEvent);
         clientHandler = new ClientHandlerThread(logger, messageReceivedEvent, userConnectionEvent);
-        objectSenderThread = new ObjectSenderThread(logger, sendablesBuffer, clientBuffer, messageBuffer, userConnectionEvent);
+        objectSenderThread = new ObjectSenderThread(logger, sendableBuffer, clientBuffer, unsentMessageBuffer, userConnectionEvent);
         configureExecutors();
 
 
@@ -218,11 +218,11 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
             masterThreadPool.submit(() -> clientHandler.queueClientForProcessing(client));
 
             masterThreadPool.submit(()->{
-                ArrayList<Message> unsentMsgList = (ArrayList<Message>) messageBuffer.getAllUnsentMessages(user);
+                ArrayList<Message> unsentMsgList = (ArrayList<Message>) unsentMessageBuffer.getAllUnsentMessages(user);
                 for (Message msg: unsentMsgList) {
                     try {
-                        sendablesBuffer.enqueueSendable(msg);
-                        messageBuffer.remove(msg);
+                        sendableBuffer.enqueueSendable(msg);
+                        unsentMessageBuffer.remove(msg);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -270,7 +270,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
                         + " >> placing updated UserSet first in buffer";
                 logger.logEvent(Level.INFO, thread , infoMsg, LocalTime.now());
                 try {
-                    sendablesBuffer.putFirst(userSet);
+                    sendableBuffer.putFirst(userSet);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -292,7 +292,7 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
                     logger.logEvent(Level.INFO, thread, "Executing -> [TASK: Queue-Message]" +
                             " >> enqueuing message received from [" + message.getAuthor()  +  "] to buffer",  LocalTime.now());
 
-                    sendablesBuffer.enqueueSendable(message);
+                    sendableBuffer.enqueueSendable(message);
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();

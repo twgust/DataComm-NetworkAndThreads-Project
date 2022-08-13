@@ -1,7 +1,6 @@
 package server.Entity;
 
 import entity.User;
-import server.controller.Buffer.MessageBuffer;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;

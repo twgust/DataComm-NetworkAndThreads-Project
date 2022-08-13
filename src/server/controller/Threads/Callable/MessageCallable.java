@@ -5,7 +5,7 @@ import entity.MessageType;
 import entity.User;
 import server.Entity.Client;
 import server.ServerInterface.UserConnectionEvent;
-import server.controller.Buffer.MessageBuffer;
+import server.controller.Buffer.UnsentMessageBuffer;
 import server.controller.ServerLogger;
 
 import javax.imageio.ImageIO;
@@ -26,14 +26,14 @@ public class MessageCallable implements Callable<Client> {
     private final Client client;
 
     private final UserConnectionEvent userConnectionEvent;
-    private final MessageBuffer messageBuffer;
+    private final UnsentMessageBuffer unsentMessageBuffer;
 
-    public MessageCallable(ServerLogger logger, Message message, Client client, UserConnectionEvent event, MessageBuffer messageBuffer) {
+    public MessageCallable(ServerLogger logger, Message message, Client client, UserConnectionEvent event, UnsentMessageBuffer unsentMessageBuffer) {
         this.logger = logger;
         this.message = message;
         this.client = client;
         this.userConnectionEvent = event;
-        this.messageBuffer = messageBuffer;
+        this.unsentMessageBuffer = unsentMessageBuffer;
     }
 
     /**
@@ -63,7 +63,7 @@ public class MessageCallable implements Callable<Client> {
                     logger.logEvent(Level.WARNING, thread, "{" + logFailedMessage + "\n}\n\n", LocalTime.now());
                     ArrayList<User> recipient = new ArrayList(1);
                     recipient.add(client.getUser());
-                    messageBuffer.put(
+                    unsentMessageBuffer.put(
                             new Message(message.getTextMessage(), message.getAuthor(), recipient, MessageType.TEXT), client.getUser());
                     userConnectionEvent.onUserDisconnectListener(client.getUser());
                     return null;
@@ -96,7 +96,7 @@ public class MessageCallable implements Callable<Client> {
 
                     // put the message to the buffer of messages which failed to send
                     // K= Message, V = User: who dropped connection
-                    messageBuffer.put(newMessage, client.getUser());
+                    unsentMessageBuffer.put(newMessage, client.getUser());
 
                     // fire onUserDisconnectEvent
                     userConnectionEvent.onUserDisconnectListener(client.getUser());
@@ -130,7 +130,7 @@ public class MessageCallable implements Callable<Client> {
 
                     // put the message to the buffer of messages which failed to send
                     // K= Message, V = User: who dropped connection
-                    messageBuffer.put(newMessage, client.getUser());
+                    unsentMessageBuffer.put(newMessage, client.getUser());
 
                     // call onUserDisconnect
                     userConnectionEvent.onUserDisconnectListener(client.getUser());

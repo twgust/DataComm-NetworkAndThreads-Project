@@ -4,8 +4,8 @@ import entity.*;
 import server.Entity.Client;
 import server.ServerInterface.UserConnectionEvent;
 import server.controller.Buffer.ClientBuffer;
-import server.controller.Buffer.MessageBuffer;
-import server.controller.Buffer.SendablesBuffer;
+import server.controller.Buffer.UnsentMessageBuffer;
+import server.controller.Buffer.SendableBuffer;
 import server.controller.ServerLogger;
 import server.controller.Threads.Callable.MessageCallable;
 import server.controller.Threads.Callable.OnlineListCallable;
@@ -23,8 +23,8 @@ import java.util.logging.Level;
 public class ObjectSenderThread {
     private final ServerLogger logger;
     private final ClientBuffer clientBuffer;
-    private final MessageBuffer messageBuffer;
-    private final SendablesBuffer sendablesBuffer;
+    private final UnsentMessageBuffer unsentMessageBuffer;
+    private final SendableBuffer sendableBuffer;
 
     private ThreadPoolExecutor threadPoolExecutor;
     private UserConnectionEvent listener;
@@ -36,14 +36,14 @@ public class ObjectSenderThread {
      * @param clientBuffer reference to buffer (final)
      * @param userBuffer   reference to buffer (final)
      */
-    public ObjectSenderThread(ServerLogger logger, SendablesBuffer buffer, ClientBuffer clientBuffer,
-                              MessageBuffer messageBuffer, UserConnectionEvent userConnectionEvent) {
+    public ObjectSenderThread(ServerLogger logger, SendableBuffer buffer, ClientBuffer clientBuffer,
+                              UnsentMessageBuffer unsentMessageBuffer, UserConnectionEvent userConnectionEvent) {
         this.logger = logger;
-        this.messageBuffer = messageBuffer;
+        this.unsentMessageBuffer = unsentMessageBuffer;
         this.listener = userConnectionEvent;
         this.clientBuffer = clientBuffer;
 
-        this.sendablesBuffer = buffer;
+        this.sendableBuffer = buffer;
     }
 
     /**
@@ -81,15 +81,15 @@ public class ObjectSenderThread {
         switch (message.getType()) {
             case TEXT -> {
                 newMessage = new Message(message.getTextMessage(), message.getAuthor(), recipient, MessageType.TEXT);
-                messageBuffer.put(newMessage, user);
+                unsentMessageBuffer.put(newMessage, user);
             }
             case IMAGE -> {
                 newMessage = new Message(message.getImage(), message.getAuthor(), recipient, MessageType.IMAGE);
-                messageBuffer.put(newMessage, user);
+                unsentMessageBuffer.put(newMessage, user);
             }
             case TEXT_IMAGE -> {
                 newMessage = new Message(message.getTextMessage(), message.getImage(), message.getAuthor(), recipient, MessageType.TEXT_IMAGE);
-                messageBuffer.put(newMessage, user);
+                unsentMessageBuffer.put(newMessage, user);
             }
         }
         System.out.println(newMessage);
@@ -105,10 +105,10 @@ public class ObjectSenderThread {
      * Prio is UserSet > Message
      */
     public synchronized void Sender() {
-        while (sendablesBuffer != null) {
+        while (sendableBuffer != null) {
             try {
                 // get sendable object by polling it from queue
-                Sendables sendable = sendablesBuffer.dequeueSendable();
+                Sendables sendable = sendableBuffer.dequeueSendable();
                 Message message = null;
                 UserSet userSet = null;
                 String thread = Thread.currentThread().getName();
@@ -139,7 +139,7 @@ public class ObjectSenderThread {
                         ArrayList<MessageCallable> callables = new ArrayList<>(list.size());
                         // for each client in the list of clients, create a new Callable
                         list.forEach(client -> {
-                            MessageCallable callable = new MessageCallable(logger, finalMessage, client, listener, messageBuffer);
+                            MessageCallable callable = new MessageCallable(logger, finalMessage, client, listener, unsentMessageBuffer);
                             callables.add(callable);
                         });
                         // invoke all the callables and fetch the result in a list of Future<Client>

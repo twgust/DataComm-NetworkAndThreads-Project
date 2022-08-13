@@ -1,23 +1,20 @@
 package server.controller.Buffer;
 
 import entity.Sendables;
-import entity.UserSet;
 
 import java.util.ArrayDeque;
-import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * @author twgust
  *
  */
-public class SendablesBuffer {
+public class SendableBuffer {
     private final ArrayDeque<Sendables> queue;
 
     /**
      * @author twgust
      */
-    public SendablesBuffer(){
+    public SendableBuffer(){
         queue = new ArrayDeque<>();
     }
     /**
