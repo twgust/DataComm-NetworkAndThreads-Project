@@ -8,12 +8,11 @@ import server.controller.Buffer.MessageBuffer;
 import server.controller.Buffer.SendablesBuffer;
 import server.controller.Buffer.UserBuffer;
 import server.controller.Threads.ClientHandlerThread;
-import server.controller.Threads.Sender.ObjectSenderThread;
+import server.controller.Threads.ObjectSenderThread;
 import server.controller.Threads.ServerConnection;
 import server.controller.Threads.UserSetProducer;
 
 import java.io.*;
-import java.net.SocketException;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.concurrent.*;

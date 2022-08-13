@@ -1,4 +1,4 @@
-package server.controller.Threads.Sender;
+package server.controller.Threads.Callable;
 
 import entity.Sendables;
 import server.Entity.Client;

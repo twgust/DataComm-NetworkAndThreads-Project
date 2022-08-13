@@ -1,4 +1,4 @@
-package server.controller.Threads.Sender;
+package server.controller.Threads;
 
 import entity.*;
 import server.Entity.Client;
@@ -7,6 +7,8 @@ import server.controller.Buffer.ClientBuffer;
 import server.controller.Buffer.MessageBuffer;
 import server.controller.Buffer.SendablesBuffer;
 import server.controller.ServerLogger;
+import server.controller.Threads.Callable.MessageCallable;
+import server.controller.Threads.Callable.OnlineListCallable;
 
 import java.time.LocalTime;
 import java.util.*;
