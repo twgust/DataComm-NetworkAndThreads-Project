@@ -19,12 +19,12 @@ import java.util.logging.Level;
 
 /**
  * @author twgust
- * Concurrent server
+ * Multi-Threaded server
  */
 public class ServerConnection implements Runnable{
-    private final ServerLogger logger;
-    private final ClientBuffer clientBuffer;
     private final UserConnectionEvent userConnectionEvent;
+    private final ClientBuffer clientBuffer;
+    private final ServerLogger logger;
 
     private ThreadPoolExecutor serverMainExecutor;
 
@@ -33,12 +33,25 @@ public class ServerConnection implements Runnable{
         this.clientBuffer = buffer;
         this.userConnectionEvent = userConnectionEvent;
     }
+
+    /**
+     * @param singleThreadExecutor executor set from controller
+     */
     public void setSingleThreadExecutor(ThreadPoolExecutor singleThreadExecutor){
         this.serverMainExecutor = singleThreadExecutor;
     }
+
+    /**
+     * invoked from controller and starts the server
+     */
     public void startServer(){
         serverMainExecutor.execute(this);
     }
+
+    /**
+     * Runnable for server,
+     * continuous while-loop which accepts incoming connection requests until told not to
+     */
     @Override
     public void run(){
         try {

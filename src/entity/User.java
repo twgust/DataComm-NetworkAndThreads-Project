@@ -5,14 +5,10 @@ import javax.swing.*;
 import java.io.Serializable;
 
 /**
- *
+ * @author twgust
  * A User should consist of the following components:
  * Username (String) OR
  * Username AND Image
- *
- */
-/**
- * @author twgust
  */
 public class User extends Sendables {
     private final String username;

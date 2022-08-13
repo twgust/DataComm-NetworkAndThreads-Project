@@ -17,14 +17,11 @@ import java.util.logging.Level;
 
 /**
  * @author twgust
- * <p>
  * ClientHandler
- * Runs on its own Thread "ClientHandler", fetches an element from the buffer (queue)
+ * Runs on its own Thread "ClientHandler"
  * The important difference between ClientHandlers buffer and Client buffer lies in data structure choice
- * <p>
  * ClientBuffer is used for look up and consists of a hashmap<User,Client>
- * ClientHandler is a FIFO queue which handles and assigns a thread to
- * clients as they establish Connection
+ * ClientHandler is a FIFO queue which handles and assigns a MessageReceiver Thread to clients as they establish Connection
  */
 public class ClientHandlerThread {
     private final ThreadAssigner clientHandlerThread;
@@ -37,6 +34,12 @@ public class ClientHandlerThread {
     private final MessageReceivedEvent messageReceivedEvent;
     private final UserConnectionEvent userConnectionEvent;
 
+    /**
+     *
+     * @param logger ServerLogger
+     * @param messageReceivedEvent implementation from Controller
+     * @param userConnectionEvent implementation from Controller
+     */
     public ClientHandlerThread(ServerLogger logger, MessageReceivedEvent messageReceivedEvent, UserConnectionEvent userConnectionEvent) {
         queue = new LinkedList<>();
         clientHandlerThread = new ThreadAssigner();
@@ -45,25 +48,35 @@ public class ClientHandlerThread {
         this.logger = logger;
     }
 
+    /**
+     * @param threadPool
+     * @return true if max threads is larger than 1 (ThreadPool)
+     */
     public boolean setThreadPoolExecutor(ThreadPoolExecutor threadPool) {
         this.clientHandlerThreadPool = threadPool;
         assert this.clientHandlerThreadPool != null;
-        return this.clientHandlerThreadPool.getCorePoolSize() == 0;
+        return this.clientHandlerThreadPool.getMaximumPoolSize() > 1;
     }
 
+    /**
+     * @param mainThread
+     * @return true if max threads == 1 (SingleThreadExecutor)
+     */
     public boolean setSingleThreadExecutor(ThreadPoolExecutor mainThread) {
         this.clientHandlerMainExec = mainThread;
         assert this.clientHandlerMainExec != null;
-        return this.clientHandlerMainExec.getCorePoolSize() <= 1;
+        return this.clientHandlerMainExec.getMaximumPoolSize() == 1;
     }
 
+    /**
+     * Starts the underlying ClientHandler Runnable "ThreadAssigner"
+     */
     public void startClientHandler() {
         clientHandlerMainExec.execute(clientHandlerThread);
     }
 
     /**
      * Queues a client according to fifo principles
-     *
      * @param client
      */
     public synchronized void queueClientForProcessing(Client client) {
@@ -124,6 +137,7 @@ public class ClientHandlerThread {
     }
 
     /**
+     * One MessageReceiverThread for each Connected Client.
      * @author twgust
      */
     private class MessageReceiverThread implements Runnable {

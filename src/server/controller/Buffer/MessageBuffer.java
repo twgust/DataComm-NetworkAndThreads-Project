@@ -19,10 +19,11 @@ public class MessageBuffer {
     }
 
     /**
+     * @author twgust
      * gets the user which the message couldn't be sent to
      * @param message the Key
      * @return V = User
-     * @throws InterruptedException
+     * @throws InterruptedException if wait is interrupted
      */
     public synchronized User getUser(Message message) throws InterruptedException {
         if(messages.isEmpty()){
@@ -59,7 +60,7 @@ public class MessageBuffer {
     /**
      * @author twgust
      * @param message to be removed from buffer, typically invoked for each message in getAllUnsentMessages(User user)
-     * @throws InterruptedException
+     * @throws InterruptedException if wait is interrupted
      */
     public synchronized void remove(Message message) throws InterruptedException {
         if(messages.isEmpty()){
@@ -71,6 +72,7 @@ public class MessageBuffer {
     }
 
     /**
+     * @author twgust
      * Adds a message to the back of the queue, fifo
      * @param message message to queue
      */

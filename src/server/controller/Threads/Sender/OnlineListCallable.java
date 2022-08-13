@@ -19,6 +19,12 @@ public class OnlineListCallable implements Callable<Client> {
     private final Sendables set;
     private final Client client;
 
+    /**
+     *
+     * @param logger ServerLogger
+     * @param set Set of currently online users
+     * @param client the client which is going to receive the updated list
+     */
     public OnlineListCallable(ServerLogger logger, Sendables set, Client client) {
         this.logger = logger;
         this.set = set;

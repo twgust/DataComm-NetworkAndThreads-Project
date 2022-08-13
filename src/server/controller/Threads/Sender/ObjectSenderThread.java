@@ -6,7 +6,6 @@ import server.ServerInterface.UserConnectionEvent;
 import server.controller.Buffer.ClientBuffer;
 import server.controller.Buffer.MessageBuffer;
 import server.controller.Buffer.SendablesBuffer;
-import server.controller.Buffer.UserBuffer;
 import server.controller.ServerLogger;
 
 import java.time.LocalTime;
@@ -30,11 +29,12 @@ public class ObjectSenderThread {
 
     /**
      * Constructor,
+     *
      * @param logger
      * @param clientBuffer reference to buffer (final)
      * @param userBuffer   reference to buffer (final)
      */
-    public ObjectSenderThread(ServerLogger logger, SendablesBuffer buffer,ClientBuffer clientBuffer ,
+    public ObjectSenderThread(ServerLogger logger, SendablesBuffer buffer, ClientBuffer clientBuffer,
                               MessageBuffer messageBuffer, UserConnectionEvent userConnectionEvent) {
         this.logger = logger;
         this.messageBuffer = messageBuffer;
@@ -45,7 +45,7 @@ public class ObjectSenderThread {
     }
 
     /**
-     * Sets executor, invoked by controller
+     * Sets executor, invoked by controller.
      * @param threadPoolExecutor has to be thread pool
      * @return
      */
@@ -54,13 +54,25 @@ public class ObjectSenderThread {
         assert this.threadPoolExecutor != null;
         return true;
     }
-    public synchronized void startObjectSender(){
-        threadPoolExecutor.submit(()->{
-            start();
+
+    /**
+     * Starts the message sender
+     */
+    public synchronized void startObjectSender() {
+        threadPoolExecutor.submit(() -> {
+            Sender();
         });
     }
 
-    private synchronized void addUnsendableToBuffer(User user, Message message) {
+    /**
+     * Similar to callable implementation.
+     * Takes a message and an author, remove all users from the recipient list except the User from the func parameter.
+     * invoked in start();
+     *
+     * @param user    User which has disconnected / closed its stream/sock
+     * @param message the original message.
+     */
+    private synchronized void addMessageToMsgBuffer(User user, Message message) {
         ArrayList<User> recipient = new ArrayList<>();
         recipient.add(user);
         Message newMessage = null;
@@ -69,7 +81,7 @@ public class ObjectSenderThread {
                 newMessage = new Message(message.getTextMessage(), message.getAuthor(), recipient, MessageType.TEXT);
                 messageBuffer.put(newMessage, user);
             }
-            case IMAGE ->{
+            case IMAGE -> {
                 newMessage = new Message(message.getImage(), message.getAuthor(), recipient, MessageType.IMAGE);
                 messageBuffer.put(newMessage, user);
             }
@@ -84,13 +96,15 @@ public class ObjectSenderThread {
 
     /**
      * @author twgust
-     * Continous loop until shutdown externally,
-     * Processes the Sendable Objects from the sendablesBuffer and sends them to relevant clients.
+     * Concurrent Message Sending while assuring that no stream is busy, one Thread per .writeObject() call.
+     * A message object with 10 users in the recipientlist can therefore be sent out concurrently,
+     * assuming 10 threads are free.
+     * <p>
      * Prio is UserSet > Message
      */
-    public synchronized void start()   {
+    public synchronized void Sender() {
         while (sendablesBuffer != null) {
-            try{
+            try {
                 // get sendable object by polling it from queue
                 Sendables sendable = sendablesBuffer.dequeueSendable();
                 Message message = null;
@@ -103,19 +117,21 @@ public class ObjectSenderThread {
                         message = (Message) sendable;
                         Message finalMessage = message;
 
-                        String logSendMessageStart = "Executing ->[TASK: Send-Message, {"+ message.hashCode() + "}]";
-                        logger.logEvent(Level.INFO,thread, logSendMessageStart, LocalTime.now());
+                        String logSendMessageStart = "Executing ->[TASK: Send-Message, {" + message.hashCode() + "}]";
+                        logger.logEvent(Level.INFO, thread, logSendMessageStart, LocalTime.now());
 
                         // for each recipient, get the associated client object from buffer
                         List<Client> list = new ArrayList<>();
                         message.getRecipientList().forEach(user -> {
                             // if the client is null, add the unsendable message to the buffer,
                             // the message will be sent once the null client reconnects
-                            if(clientBuffer.get(user) == null){
-                                addUnsendableToBuffer(user, finalMessage);
+                            if (clientBuffer.get(user) == null) {
+                                addMessageToMsgBuffer(user, finalMessage);
                             }
                             // else, the client is connected and we add it to the list of clients
-                            else { list.add(clientBuffer.get(user)); }
+                            else {
+                                list.add(clientBuffer.get(user));
+                            }
                         });
 
                         ArrayList<MessageCallable> callables = new ArrayList<>(list.size());
@@ -126,19 +142,19 @@ public class ObjectSenderThread {
                         });
                         // invoke all the callables and fetch the result in a list of Future<Client>
                         List<Future<Client>> resultList = threadPoolExecutor.invokeAll(callables, 2, TimeUnit.SECONDS);
-                            for (int i = 0; i < resultList.size(); i++) {
-                                    Future<Client> clientel = resultList.get(i);
-                                    try{
-                                        // here we see if an exception - that wasn't handled by the Callable - occurrs.
-                                        Client client = clientel.get();
-                                    }catch (ExecutionException e){
-                                        System.out.println(e.getCause());
-                                        e.printStackTrace();
-                                    }
+                        for (int i = 0; i < resultList.size(); i++) {
+                            Future<Client> clientel = resultList.get(i);
+                            try {
+                                // here we see if an exception - that wasn't handled by the Callable - occurrs.
+                                Client client = clientel.get();
+                            } catch (ExecutionException e) {
+                                System.out.println(e.getCause());
+                                e.printStackTrace();
                             }
+                        }
                         // all online users on the recipient list has been sent a message by this point!
-                        String logSendMessageEnd = "[TASK: Send-Message, {"+message.hashCode()+"}]" + "  >> Completed!";
-                        logger.logEvent(Level.INFO,thread,logSendMessageEnd, LocalTime.now());
+                        String logSendMessageEnd = "[TASK: Send-Message, {" + message.hashCode() + "}]" + "  >> Completed!";
+                        logger.logEvent(Level.INFO, thread, logSendMessageEnd, LocalTime.now());
                     }
 
                     case UserSet -> {
@@ -151,14 +167,14 @@ public class ObjectSenderThread {
                         // for each client c,
                         // create a OnlineListCallable(ServerLogger,Sendable, Client c) obj
                         // add the instance to a list of callables.
-                        for (Client client: arr) {
+                        for (Client client : arr) {
                             OnlineListCallable callable = new OnlineListCallable(logger, finalSet, client);
                             callables.add(callable);
                         }
                         // execute all the callables and wait for result, this way we achieve concurrency in message sending
                         // while avoiding the race condition for the clients ObjectInputStream.
                         // No stream will ever be busy.
-                        try{
+                        try {
                             List<Future<Client>> resultList = threadPoolExecutor.invokeAll(callables, 2, TimeUnit.SECONDS);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
@@ -167,13 +183,14 @@ public class ObjectSenderThread {
 
                 }
 
-            }catch (InterruptedException  e){
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
 
     }
-    private String getThreadName(Thread thread){
+
+    private String getThreadName(Thread thread) {
         return thread.getName().toString();
     }
 }

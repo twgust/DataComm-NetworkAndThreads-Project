@@ -49,8 +49,8 @@ public class MessageCallable implements Callable<Client> {
         System.out.println(message.getAuthor() + ": " + message.getTextMessage() + " --> " + client.getUser().getUsername());
         String thread = Thread.currentThread().getName();
         String logFailedMessage = "IOException encountered in ---[TASK Send-Message{" + message.hashCode() + "}]" +
-                "\n>CAUSE: M={hashcode=" + message.hashCode() + "} could not be sent to [" + client.getUser() + "] due to an IOException" +
-                "\n>ACTION: queueing unsendable to message buffer and disconnecting client";
+                "\n >> CAUSE: M={hashcode=" + message.hashCode() + "} could not be sent to [" + client.getUser() + "] due to an IOException" +
+                "\n >> ACTION: queueing unsendable to message buffer and disconnecting client";
         switch (message.getType()) {
             case TEXT -> {
                 try {

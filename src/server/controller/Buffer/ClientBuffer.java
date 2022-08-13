@@ -46,7 +46,6 @@ public class ClientBuffer {
      * @author twgust
      * @param user key to fetch
      * @return returns value for K: user
-     * @throws InterruptedException if wait() is interrupted exception is thrown
      */
     public synchronized Client get(User user){
         if(clientBuffer.isEmpty()){
@@ -94,14 +93,6 @@ public class ClientBuffer {
      */
     public synchronized int size(){
         return clientBuffer.size();
-    }
-
-    /**
-     * @author twgust
-     * test func for now
-     */
-    public synchronized void printAllUsers(){
-        System.out.println(clientBuffer.keySet());
     }
 
     /**

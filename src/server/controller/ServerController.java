@@ -65,7 +65,6 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     private ObjectSenderThread objectSenderThread;
     private ClientHandlerThread clientHandler;
     private UserSetProducer userSetProducer;
-
     // executors for threads & runnables
     private ThreadPoolExecutor clientHandlerSingleThread;
     private ThreadPoolExecutor masterThreadPool;
@@ -73,14 +72,13 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     private ThreadPoolExecutor objectSenderPool;
     private ThreadPoolExecutor serverConnSingleThread;
     // when calling a function of the reference the implementations fire
-
-
     private UserConnectionEvent userConnectionEvent;
     private UserSetProducedEvent userSetProducedEvent;
     private MessageReceivedEvent messageReceivedEvent;
 
     /**
      * @author twgust
+     * Constructor, intializes the buffers and logger.
      */
     public ServerController() throws IOException {
         sendablesBuffer = new SendablesBuffer();
@@ -91,31 +89,31 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     }
 
     /**
-     * @param messageReceivedEvent
      * @author twgust
+     * @param messageReceivedEvent implementation of MessageReceivedEvent
      */
     public void addMessageReceivedListener(MessageReceivedEvent messageReceivedEvent) {
         this.messageReceivedEvent = messageReceivedEvent;
     }
 
     /**
-     * @param userConnectionEvent implementation of UserConnectionCallBack Interface
      * @author twgust
+     * @param userConnectionEvent implementation of UserConnectionCallBack Interface
      */
     public void addConnectionListener(UserConnectionEvent userConnectionEvent) {
         this.userConnectionEvent = userConnectionEvent;
     }
 
     /**
-     * @param userSetProduced
      * @author twgust
+     * @param userSetProduced   implementation of UserSetProducedEvent
      */
     public void addProducerListener(UserSetProducedEvent userSetProduced) {
         this.userSetProducedEvent = userSetProduced;
     }
 
     /**
-     * @param impl
+     * @param impl  implementation of LoggerCallBack
      */
     public void sendLoggerCallbackImpl(LoggerCallBack impl) {
         logger.setLoggerCallback(impl);
@@ -155,16 +153,16 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
      * @author twgust
      * sets up executors which will run the different modules in the server.
      * Allows for higher level of control since the processes within a module can be individually killed as necessary.
-     * <p>
+     *
      * 1) MasterThread pool invoked functions in the controller which starts some work in one of the threads,
      * typically when events are being called through callback interfaces, E.g. OnUserDisconnect/OnMessageReceived
-     * <p>
+     *
      * 2) ServerThreadPool - Single Thread - Responsible for starting server and accepting incoming connections.
-     * <p>
+     *
      * 3) ClientHandler - Single Thread - MainThread executes Runnable,
      * 3.1) ClientHandler - Thread Pool - ThreadPool, one thread for each connected client,
+     *
      * each thread in pool listens to its own client through the MessageReceiver.
-     * <p>
      * 4) Object sender has a thread pool which it uses to concurrently send messages to clients
      */
     private void configureExecutors() {
@@ -183,13 +181,14 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     }
 
     /**
-     * @param name         name of thread
-     * @param corePoolSize size of threads to keep active in pool whether they're doing work, defaults to 0
-     * @param max          max amount of threads at any given point
-     * @param queue        the queue implementation provided
-     * @return a ThreadPoolExecutor (Single/pool)
      * @author twgust
      * Custom implementation of executor service, allows for naming of threads in threadpool
+     * @param name name of thread
+     * @param corePoolSize size of threads to keep active in pool whether they're doing work, defaults to 0
+     * @param max max amount of threads at any given point
+     * @param queue the queue implementation provided
+     * @return a ThreadPoolExecutor (Single/pool)
+     * @author twgust
      */
     public ThreadPoolExecutor createThreadPool(String name, int corePoolSize, int max, BlockingQueue<Runnable> queue) {
         return new ThreadPoolExecutor(corePoolSize, max, 60, TimeUnit.SECONDS, queue, new ThreadFactory() {
@@ -206,12 +205,14 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
      * @author twgust
      * Implementation of the UserConnectionCallback interface,
      * fires on successful client connection
-     * Every connected client is updated when fired.
+     * Every connected client is updated with a new List of Online users (UserSetProducer)
      */
     @Override
     public void onUserConnectListener(User user) {
         synchronized (this) {
             Client client = clientBuffer.get(user);
+            String ip = "[" +  client.getSocket().getLocalAddress().toString() + ":" + client.getSocket().getLocalPort() + "]";
+            String thread = Thread.currentThread().getName();
 
             userBuffer.put(user);
             masterThreadPool.submit(() -> userSetProducer.updateUserSet(user, ConnectionEventType.Connected));
@@ -228,25 +229,20 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
                     }
                 }
             });
-
-            String thread = Thread.currentThread().getName();
-            String ip = "[" +  client.getSocket().getLocalAddress().toString() + ":" + client.getSocket().getLocalPort() + "]";
             String logUserConnectionMsg ="[TASK:UserConnection " + user + "]" + " >> Completed!";
             logger.logEvent(Level.INFO, thread, logUserConnectionMsg, LocalTime.now());
         }
     }
 
     /**
-     * @param user the client whose socket was closed.
      * @author twgust
+     * @param user the client whose socket was closed.
      */
     @Override
     public void onUserDisconnectListener(User user) {
         synchronized (this) {
                 try {
-                    System.out.println("ONUSERDISCONNECT START");
                     String thread = Thread.currentThread().getName();
-
                     String userDisconnectMsg = "Executing -> [TASK=DisconnectClient" + user + "]";
                     logger.logEvent(Level.WARNING, thread,userDisconnectMsg, LocalTime.now());
 
@@ -256,7 +252,6 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
 
                     String additionalDisconnectMsg = "Executed -> [TASK:DisconnectClient" + user + "]";
                     logger.logEvent(Level.INFO,thread, additionalDisconnectMsg, LocalTime.now());
-                    System.out.println("ONUSERDISCONNECT END");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -264,8 +259,8 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     }
 
     /**
-     * @param userSet the updated list containing all currently online clients
      * @author twgust
+     * @param userSet the updated list containing all currently online clients
      */
     @Override
     public void userSetProduced(UserSet userSet) {
@@ -286,8 +281,8 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
     }
 
     /**
-     * @param message
      * @author twgust
+     * @param message Message that was received (see ClientHandler.MessageReceiver)
      */
     @Override
     public void onMessageReceivedEvent(Message message) {
@@ -295,43 +290,15 @@ public class ServerController implements UserConnectionEvent, MessageReceivedEve
             masterThreadPool.submit(() -> {
                 try {
                     String thread = Thread.currentThread().getName();
-
                     logger.logEvent(Level.INFO, thread, "Executing -> [TASK: Queue-Message]" +
                             " >> enqueuing message received from [" + message.getAuthor()  +  "] to buffer",  LocalTime.now());
+
                     sendablesBuffer.enqueueSendable(message);
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             });
-        }
-    }
-
-
-    /**
-     * WIP
-     * Function for handling Socket exceptions
-     *
-     * @param e      the exception to be handled
-     * @param thread the thread in which the Exception occurred
-     */
-    private void handleIOException(IOException e, String methodName, Thread thread, User user, String clientIP) throws IOException {
-        if (clientIP.isEmpty()) {
-            clientIP = "exception occurred in unknown client";
-        }
-        if (e instanceof SocketException) {
-            // assume user disconnect, at any rate the SocketException has the effect of a disconnected user
-            // log to server gui
-
-            // onUserDisconnectListener(user, ); fix this
-        } else if (e instanceof EOFException) {
-            // log to server gui
-            String logEndOfFileMsg = "Client: EOF exception for " + user.getUsername() + " in " + methodName;
-            e.printStackTrace();
-        } else {
-            // log to server gui
-            String logUnhandledExceptionMsg = "UNHANDLED EXCEPTION\n" + e.getMessage();
-            e.printStackTrace();
         }
     }
 }

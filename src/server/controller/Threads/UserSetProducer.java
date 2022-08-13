@@ -16,6 +16,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 /**
  * @author twgust
+ * Typically invoked after a user connection or disconnect.
+ * The Interface implementation of UserConnectionEvent starts this producer by
+ * invoking updateUserSet(User,ConnectionEventType);
+ * Given that information a new UserSet (See entity package) is produced.
+ * Finally, once a UserSet has been produced, the Controller is notified through the UserSetProducedEvent
  */
 public class UserSetProducer{
     private final ServerLogger logger;
