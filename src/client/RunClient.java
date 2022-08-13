@@ -13,11 +13,11 @@ public class RunClient {
         // distinguish between local clients by port number, not remote address// gui starts connection to server because a user will click connect
 
         String ip = "127.0.0.1";
-        ClientController c1 = new ClientController(ip, 45699, "CLIENT-1");
-        ClientController c2 = new ClientController(ip, 45699, "CLIENT-2");
-        ClientController c3 = new ClientController(ip, 45699, "CLIENT-3");
-        ClientController c4 = new ClientController(ip, 45699, "CLIENT-4");
-        ClientController c5 = new ClientController(ip, 45699, "CLIENT-5");
+        ClientController c1 = new ClientController(ip, 42652, "CLIENT-1");
+        ClientController c2 = new ClientController(ip, 42652, "CLIENT-2");
+        ClientController c3 = new ClientController(ip, 42652, "CLIENT-3");
+        ClientController c4 = new ClientController(ip, 42652, "CLIENT-4");
+        ClientController c5 = new ClientController(ip, 42652, "CLIENT-5");
         ClientGUI g1 = new ClientGUI(c1);
         ClientGUI g2 = new ClientGUI(c2);
         ClientGUI g3 = new ClientGUI(c3);
@@ -72,27 +72,27 @@ public class RunClient {
 
         });
         threadpool.submit(() -> {
+            g4.sendMessage("BBB", "src/client/images/cat.jpg", MessageType.TEXT_IMAGE);
             g4.sendMessage("BBB", "", MessageType.TEXT);
             g4.sendMessage("BBB", "", MessageType.TEXT);
             g4.sendMessage("BBB", "", MessageType.TEXT);
+            g4.sendMessage("BBB", "src/client/images/cat.jpg", MessageType.TEXT_IMAGE);
             g4.sendMessage("BBB", "", MessageType.TEXT);
-            g4.sendMessage("BBB", "", MessageType.TEXT);
-            g4.sendMessage("BBB", "", MessageType.TEXT);
-            g4.sendMessage("BBB", "", MessageType.TEXT);
+            g4.sendMessage("BBB", "src/client/images/cat.jpg", MessageType.TEXT_IMAGE);
         });
         threadpool.submit(() -> {
             try{
-                Thread.sleep(5000);
+                Thread.sleep(2500);
                 g1.connect("user-6", "src/client/images/circle_of_fifths.jpg");
+                g5.sendMessage("CCC", null, MessageType.TEXT);
+                g5.sendMessage("CCC", null, MessageType.TEXT);
+                g5.sendMessage("CCC", null, MessageType.TEXT);
+                g5.sendMessage("CCC", null, MessageType.TEXT);
+                g5.sendMessage("CCC", null, MessageType.TEXT);
+                g5.sendMessage("CCC", null, MessageType.TEXT);
             }catch (InterruptedException e){
                 e.printStackTrace();
             }
-            g5.sendMessage("CCC", null, MessageType.TEXT);
-            g5.sendMessage("CCC", null, MessageType.TEXT);
-            g5.sendMessage("CCC", null, MessageType.TEXT);
-            g5.sendMessage("CCC", null, MessageType.TEXT);
-            g5.sendMessage("CCC", null, MessageType.TEXT);
-            g5.sendMessage("CCC", null, MessageType.TEXT);
 
         });
     }

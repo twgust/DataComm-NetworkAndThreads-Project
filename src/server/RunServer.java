@@ -22,7 +22,10 @@ public class RunServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+        File directory = new File("images");
+        if (! directory.exists()){
+            directory.mkdir();
+        }
         ServerController serverController = new ServerController();
         ServerGUI serverGUI = new ServerGUI(serverController,500, 500);
         // maybe read from cli and start server that way, give the host option to choose port etc

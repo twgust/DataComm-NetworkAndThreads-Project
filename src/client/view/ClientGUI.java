@@ -170,10 +170,9 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
 
         });
     }
-    private ImageIcon byteArrToImageIcon(byte[] img){
+    private synchronized ImageIcon byteArrToImageIcon(byte[] img){
 
         try{
-            System.out.println("asd");
             ByteArrayInputStream bais = new ByteArrayInputStream(img);
             BufferedImage bufferedImage = ImageIO.read(bais);
             return new ImageIcon(bufferedImage);

@@ -8,7 +8,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /**
- * Representation of a socket + the associated user 
+ * Representation of a socket + the associated user
  * @author twgust
  */
 public class Client {

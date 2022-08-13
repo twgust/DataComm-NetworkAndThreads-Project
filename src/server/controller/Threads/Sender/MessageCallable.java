@@ -11,12 +11,10 @@ import server.controller.ServerLogger;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
@@ -35,7 +33,6 @@ public class MessageCallable implements Callable<Client> {
         this.client = client;
         this.userConnectionEvent = event;
         this.messageBuffer = messageBuffer;
-
     }
 
     /**
@@ -73,16 +70,15 @@ public class MessageCallable implements Callable<Client> {
             }
 
             case IMAGE -> {
-                byte[] byteBuffer = message.getAuthor().getAvatarAsByteBuffer();
-                assert message.getAuthor().getAvatarAsByteBuffer() != null;
+                byte[] byteBuffer = message.getImage();
+                assert message.getImage() != null;
 
                 try {
+
+
                     ByteArrayInputStream bais = new ByteArrayInputStream(byteBuffer);
                     BufferedImage img = ImageIO.read(bais);
-                    String folder = RunServer.getProgramPath2();
-                    String fileSeparator = System.getProperty("file.separator");
-                    String newDir = folder + fileSeparator + "messages" + fileSeparator;
-                    ImageIO.write(img, "jpg", new File(newDir));
+                    ImageIO.write(img, "jpg", new File("/images/" + message.hashCode() +".jpg"));
                     bais.close();
                     oos.writeObject(message);
                     oos.flush();
@@ -103,14 +99,13 @@ public class MessageCallable implements Callable<Client> {
 
             case TEXT_IMAGE -> {
                 try {
-                    byte[] byteBuffer = message.getAuthor().getAvatarAsByteBuffer();
-                    assert message.getAuthor().getAvatarAsByteBuffer() != null;
+                    byte[] byteBuffer = message.getImage();
+                    assert message.getImage() != null;
+
                     ByteArrayInputStream bais = new ByteArrayInputStream(byteBuffer);
                     BufferedImage img = ImageIO.read(bais);
-                    String folder = RunServer.getProgramPath2();
-                    String fileSeparator = System.getProperty("file.separator");
-                    String newDir = folder + fileSeparator + "User Messages" + fileSeparator;
-                    ImageIO.write(img, "jpg", new File(newDir));
+
+                    ImageIO.write(img, "jpg", new File("images/" + message.hashCode() +".jpg"));
                     bais.close();
 
                     oos.writeObject(message);
