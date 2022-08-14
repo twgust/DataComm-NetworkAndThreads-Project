@@ -209,9 +209,16 @@ public class ClientController {
      * @throws IOException ByteArrayOutputStream / ImageIO
      */
     private synchronized byte[] pathToByteArr(String path) throws IOException{
-        BufferedImage bufferedImage = ImageIO.read(new File(path));
+        File fileToProcess = new File(path);
+        String fileName = fileToProcess.getName();
+        String extension = "";
+        int extensionIndex = fileName.lastIndexOf('.');
+        if (extensionIndex > 0) {
+            extension = fileName.substring(extensionIndex+1);
+        }
+        BufferedImage bufferedImage = ImageIO.read(fileToProcess);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(bufferedImage, "jpg", baos);
+        ImageIO.write(bufferedImage, extension, baos);
         baos.flush();
         byte[] imageInByteArr = baos.toByteArray();
         baos.close();
@@ -228,7 +235,6 @@ public class ClientController {
     public synchronized void sendChatMsg(String message, Object[] recipients, MessageType msgType) throws IOException {
         assert (user != null);
         ArrayList<User> recipientList = new ArrayList<>();
-
         for (Object o:recipients) {
             if(o instanceof User){
                 recipientList.add((User)o);

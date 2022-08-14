@@ -3,6 +3,8 @@ package client;
 import client.controller.ClientController;
 import client.view.ClientGUI;
 import entity.MessageType;
+import entity.User;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -55,16 +57,17 @@ public class RunClient {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        User[] recipientUsersTest = {g1.getUser(), g2.getUser(), g3.getUser(), g4.getUser(), g5.getUser()};
         threadpool.submit(() -> {
-            g2.sendMessage("heloooo im u7", "", MessageType.TEXT);
+            g2.sendMessage("heloooo im u7", "", MessageType.TEXT, recipientUsersTest);
             //    g3.sendMessage("hellloooo im u8", MessageType.TEXT);
         });
         threadpool.submit(() -> {
-            g3.sendMessage("AAA", "", MessageType.TEXT);
-            g3.sendMessage("AAA", "", MessageType.TEXT);
-            g3.sendMessage("AAA", "", MessageType.TEXT);
-            g3.sendMessage("AAA", "", MessageType.TEXT);
-            g3.sendMessage("AAA", "", MessageType.TEXT);
+            g3.sendMessage("AAA", "", MessageType.TEXT, recipientUsersTest);
+            g3.sendMessage("AAA", "", MessageType.TEXT, recipientUsersTest);
+            g3.sendMessage("AAA", "", MessageType.TEXT, recipientUsersTest);
+            g3.sendMessage("AAA", "", MessageType.TEXT, recipientUsersTest);
+            g3.sendMessage("AAA", "", MessageType.TEXT, recipientUsersTest);
             g1.disconnect();
 
             //g1.connect("user-6", "src/client/images/circle_of_fifths.jpg");
@@ -72,23 +75,23 @@ public class RunClient {
 
         });
         threadpool.submit(() -> {
-            g4.sendMessage("BBB", "src/client/images/cat.jpg", MessageType.TEXT_IMAGE);
-            g4.sendMessage("BBB", "", MessageType.TEXT);
-            g4.sendMessage("BBB", "", MessageType.TEXT);
-            g4.sendMessage("BBB", "", MessageType.TEXT);
-            g4.sendMessage("BBB", "", MessageType.TEXT);
+            g4.sendMessage("BBB", "src/client/images/cat.jpg", MessageType.TEXT_IMAGE, recipientUsersTest);
+            g4.sendMessage("BBB", "", MessageType.TEXT, recipientUsersTest);
+            g4.sendMessage("BBB", "", MessageType.TEXT, recipientUsersTest);
+            g4.sendMessage("BBB", "", MessageType.TEXT, recipientUsersTest);
+            g4.sendMessage("BBB", "", MessageType.TEXT, recipientUsersTest);
         });
         threadpool.submit(() -> {
             try{
                 Thread.sleep(2500);
                 g1.connect("user-6", "src/client/images/circle_of_fifths.jpg");
                 Thread.sleep(50);
-                g5.sendMessage("CCC", null, MessageType.TEXT);
-                g5.sendMessage("CCC", null, MessageType.TEXT);
-                g5.sendMessage("CCC", null, MessageType.TEXT);
-                g5.sendMessage("CCC", null, MessageType.TEXT);
-                g5.sendMessage("CCC", null, MessageType.TEXT);
-                g5.sendMessage("CCC", null, MessageType.TEXT);
+                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
+                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
+                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
+                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
+                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
+                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
             }catch (InterruptedException e){
                 e.printStackTrace();
             }

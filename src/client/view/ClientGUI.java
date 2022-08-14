@@ -9,15 +9,18 @@ import entity.User;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Objects;
 
 /**
  *
@@ -25,12 +28,23 @@ import java.util.HashSet;
 public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
     // Swing components
     private JFrame frame;
-    private DefaultListModel<User> listModel;
-    private JList jlistOnline;
+    private DefaultListModel<User> onlineListModel;
+    private DefaultListModel<User> contactListModel;
+    private JList<User> jlistOnline;
+    private JList<User> jListContacts;
     private JTextArea textAreaChat;
     private JTextField textFieldInput;
     private JButton sendButton;
     private JLabel lblIcon;
+    private JTabbedPane tabbedPane;
+    private JFileChooser fileChooser;
+    private JButton attachFileButton;
+    private JButton addToContactsButton;
+    private JButton removeContactButton;
+    private JPanel onlineListPanel;
+    private JPanel contactListPanel;
+    private JPanel chatPanel;
+    private File selectedFile = null;
 
 
     // to update gui
@@ -43,7 +57,8 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
         this.clientController = clientController;
         this.clientController.addConnectionHandler(this);
         this.clientController.addMessageReceivedHandler(this);
-        setupPanel();
+        setupFrame();
+        createListeners();
     }
 
     /**
@@ -60,6 +75,7 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
     public void disconnect(){
         System.out.println("calling disconnect in gui");
         clientController.disconnectFromServer();
+
     }
 
     /**
@@ -67,31 +83,31 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
      * @param message string fetched from textfield
      * @param msgType hardcoded for testing, solving in gui later
      */
-    public void sendMessage(String message,String path ,MessageType msgType){
-        if(listModel.isEmpty()){
+    public void sendMessage(String message,String path ,MessageType msgType, Object[] recipients ){
+        if(onlineListModel.isEmpty()){
             System.out.println("U haven't selected any recipients!");
             return;
         }
+
         // recipients of message, selected by user in gui
         SwingUtilities.invokeLater(()->{
             //test case, send to all connected clients
-            Object[] objects = listModel.toArray();
             // the type of message, also selected in gui
             MessageType type = msgType;
             switch (type){
                 case TEXT -> {
                     try {
-                        clientController.sendChatMsg(message, objects,  msgType);
+                        clientController.sendChatMsg(message, recipients,  msgType);
                     } catch (IOException e) { e.printStackTrace(); }
                 }
                 case IMAGE -> {
                     try {
-                        clientController.sendChatMsg(objects,msgType,path);
+                        clientController.sendChatMsg(recipients,msgType,path);
                     } catch (IOException e) { e.printStackTrace(); }
                 }
                 case TEXT_IMAGE -> {
                     try {
-                        clientController.sendChatMsg(message,objects,msgType, path);
+                        clientController.sendChatMsg(message,recipients,msgType, path);
                     } catch (IOException e) { e.printStackTrace(); }
                 }
             }});
@@ -118,7 +134,7 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
         SwingUtilities.invokeLater(()->{
             textAreaChat.setText("");
             frame.setTitle("offline...");
-            listModel.clear();
+            onlineListModel.clear();
         });
     }
 
@@ -132,8 +148,8 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
         System.out.println(set.size() + " " + clientController.getLocalPort());
         SwingUtilities.invokeLater(()->{
             set.forEach(user -> {
-                listModel.clear();
-                listModel.addAll(set);
+                onlineListModel.clear();
+                onlineListModel.addAll(set);
             });
         });
 
@@ -153,12 +169,16 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
      */
     @Override
     public void imageMessageReceived(Message message, LocalTime timeNow) {
-        ImageIcon img = byteArrToImageIcon(message.getImage());
-        User author = message.getAuthor();
-        textAreaChat.append(timeNow.now().getHour() +":" + timeNow.now().getMinute()+ ":" + timeNow.now().getSecond()+
-                " >" + message.getAuthor().getUsername() + ": " + message.getTextMessage() +
-                " [" + message.getType() +  ", Size="+ message.getImage().length+" bytes]\n");
+        SwingUtilities.invokeLater(() -> {
+            ImageIcon img = byteArrToImageIcon(message.getImage());
+            User author = message.getAuthor();
+            textAreaChat.append(timeNow.now().getHour() + ":" + timeNow.now().getMinute() + ":" + timeNow.now().getSecond() +
+                    " >" + message.getAuthor().getUsername() + ": " + "Image message" +
+                    " [" + message.getType() + ", Size=" + message.getImage().length + " bytes]\n");
+            JOptionPane.showMessageDialog(null, img);
+        });
     }
+
     /**
      * @param message fires when message.getType() returns TEXT_IMAGE
      */
@@ -205,44 +225,136 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
     /**
      * Mock gui for testing
      */
-    private void setupFrame(JPanel panel) {
+    private void setupFrame() {
+        setupChatPanel();
+        setupListPanel();
         frame = new JFrame("chat client");
-        frame.getContentPane().add(panel);
+        //frame.setLayout();
+        frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.X_AXIS));
+        frame.setPreferredSize(new Dimension(735, 464));
+        frame.getContentPane().setPreferredSize(new Dimension(735 ,464));
+        frame.getContentPane().add(chatPanel);
+        frame.getContentPane().add(Box.createRigidArea(new Dimension(15,0)));
+        frame.getContentPane().add(tabbedPane);
+        frame.getContentPane().add(Box.createRigidArea(new Dimension(15,0)));
         frame.setResizable(false);
         frame.pack();
         frame.setVisible(true);
     }
 
-    private void setupPanel() {
-        SwingUtilities.invokeLater(() -> {
-            JPanel panel = new JPanel();
+    private void setupChatPanel() {
+            chatPanel = new JPanel();
             //construct components
-            listModel = new DefaultListModel();
-            jlistOnline = new JList(listModel);
 
             textAreaChat = new JTextArea(5, 5);
             textFieldInput = new JTextField(5);
+            attachFileButton = new JButton("Attach image");
             sendButton = new JButton("Send");
             lblIcon = new JLabel();
+            fileChooser = new JFileChooser();
+            FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                    "Images, jpg, png", "jpg","png");
+            fileChooser.setFileFilter(filter);
 
             //adjust size and set layout
-            panel.setPreferredSize(new Dimension(557, 464));
-            panel.setLayout(null);
+            chatPanel.setPreferredSize(new Dimension(475, 464));
+            chatPanel.setLayout(null);
 
             //add components
-            panel.add(jlistOnline);
-            panel.add(textAreaChat);
-            panel.add(textFieldInput);
-            panel.add(sendButton);
-            panel.add(lblIcon);
+            chatPanel.add(textAreaChat);
+            chatPanel.add(attachFileButton);
+            chatPanel.add(textFieldInput);
+            chatPanel.add(sendButton);
+            chatPanel.add(lblIcon);
 
             //set component bounds (only needed by Absolute Positioning)
-            jlistOnline.setBounds(480, 0, 75, 410);
             textAreaChat.setBounds(0, 0, 475, 410);
-            textFieldInput.setBounds(0, 415, 385, 35);
+            attachFileButton.setBounds(0,415,90,35);
+            textFieldInput.setBounds(90, 415, 295, 35);
             sendButton.setBounds(385, 415, 90, 35);
             lblIcon.setBounds(475, 415, 35,35);
-            setupFrame(panel);
+    }
+
+    private void setupListPanel() {
+            tabbedPane = new JTabbedPane();
+            tabbedPane.setPreferredSize(new Dimension(230, 410));
+
+            //construct JPanel for online users list
+
+            onlineListPanel = new JPanel();
+
+            onlineListModel = new DefaultListModel<>();
+            jlistOnline = new JList<>(onlineListModel);
+
+            addToContactsButton = new JButton("Add to contacts");
+
+            onlineListPanel.setPreferredSize(new Dimension(230, 410));
+            onlineListPanel.setLayout(null);
+
+            jlistOnline.setBounds(0, 0, 230, 380);
+            addToContactsButton.setBounds(0, 380, 230, 30 );
+            onlineListPanel.add(jlistOnline);
+            onlineListPanel.add(addToContactsButton);
+            tabbedPane.addTab("Online", onlineListPanel);
+
+            //construct JPanel for contacts list
+
+            contactListPanel = new JPanel();
+
+            contactListModel = new DefaultListModel<>();
+            jListContacts = new JList<>(contactListModel);
+
+            removeContactButton = new JButton("Remove from contacts");
+
+            contactListPanel.setPreferredSize(new Dimension(230, 410));
+            contactListPanel.setLayout(null);
+
+            removeContactButton.setBounds(0, 380, 230, 30);
+            jListContacts.setBounds(0, 0, 230, 380);
+            contactListPanel.add(jListContacts);
+            contactListPanel.add(removeContactButton);
+            tabbedPane.addTab("Contacts", contactListPanel);
+
+    }
+
+    private void createListeners() {
+        addToContactsButton.addActionListener(actionEvent -> {
         });
+        removeContactButton.addActionListener(actionEvent -> {
+            //call contacts handler through controller
+        });
+        sendButton.addActionListener(actionEvent -> {
+            Component prelimJList = tabbedPane.getComponentAt(0).getComponentAt(0,0);
+            JList confirmedJList;
+            if (prelimJList instanceof JList) {
+                confirmedJList = (JList) prelimJList;
+            }
+            else {
+                System.out.println("Unexpected error in finding JList");
+                return;
+            }
+            if (selectedFile == null && !Objects.equals(textFieldInput.getText(), "")) {
+                sendMessage(textFieldInput.getText(),"",MessageType.TEXT,confirmedJList.getSelectedValuesList().toArray());
+                textFieldInput.setText("");
+            }
+            else if (selectedFile != null && !Objects.equals(textFieldInput.getText(), "")) {
+                sendMessage(textFieldInput.getText(), selectedFile.getAbsolutePath(), MessageType.TEXT_IMAGE, confirmedJList.getSelectedValuesList().toArray());
+                textFieldInput.setText("");
+                selectedFile = null;
+            }
+            else if (selectedFile != null){
+                sendMessage("Image message", selectedFile.getAbsolutePath(), MessageType.IMAGE, confirmedJList.getSelectedValuesList().toArray());
+                selectedFile = null;
+            }
+        });
+        attachFileButton.addActionListener(actionEvent -> {
+            if (fileChooser.showOpenDialog(chatPanel) == JFileChooser.APPROVE_OPTION) {
+                selectedFile = fileChooser.getSelectedFile();
+            };
+        });
+    }
+
+    public User getUser() {
+        return clientController.getUser();
     }
 }
