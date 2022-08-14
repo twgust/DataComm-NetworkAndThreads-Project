@@ -11,8 +11,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -152,7 +151,11 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
                 onlineListModel.addAll(set);
             });
         });
-
+    }
+    @Override
+    public void contactsUpdatedCallback(HashSet<User> set) {
+        contactListModel.clear();
+        contactListModel.addAll(set);
     }
 
     /**
@@ -223,7 +226,8 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
         System.out.println(e.getMessage());
     }
     /**
-     * Mock gui for testing
+     * Sets up JFrame for GUI
+     * @author twgust, Alexandra Koch
      */
     private void setupFrame() {
         setupChatPanel();
@@ -241,7 +245,10 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
         frame.pack();
         frame.setVisible(true);
     }
-
+    /**
+     * Sets up chat panel, with text entry and display fields + associated buttons
+     * @author twgust, Alexandra Koch
+     */
     private void setupChatPanel() {
             chatPanel = new JPanel();
             //construct components
@@ -274,7 +281,10 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
             sendButton.setBounds(385, 415, 90, 35);
             lblIcon.setBounds(475, 415, 35,35);
     }
-
+    /**
+     * Sets up contact list panel
+     * @author Alexandra Koch
+     */
     private void setupListPanel() {
             tabbedPane = new JTabbedPane();
             tabbedPane.setPreferredSize(new Dimension(230, 410));
@@ -316,15 +326,23 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
             tabbedPane.addTab("Contacts", contactListPanel);
 
     }
-
+    /**
+     * Sets up event listeners for GUI
+     * @author Alexandra Koch
+     */
     private void createListeners() {
+
         addToContactsButton.addActionListener(actionEvent -> {
+            clientController.addContact(jlistOnline.getSelectedValue());
         });
+
         removeContactButton.addActionListener(actionEvent -> {
-            //call contacts handler through controller
+            clientController.removeContact(jListContacts.getSelectedValue());
         });
         sendButton.addActionListener(actionEvent -> {
-            Component prelimJList = tabbedPane.getComponentAt(0).getComponentAt(0,0);
+            int selectedIndex;
+            Component selectedTab = tabbedPane.getComponentAt(tabbedPane.getSelectedIndex());
+            Object prelimJList = selectedTab.getComponentAt(0,0);
             JList confirmedJList;
             if (prelimJList instanceof JList) {
                 confirmedJList = (JList) prelimJList;
@@ -333,25 +351,67 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
                 System.out.println("Unexpected error in finding JList");
                 return;
             }
+            //text only message
             if (selectedFile == null && !Objects.equals(textFieldInput.getText(), "")) {
                 sendMessage(textFieldInput.getText(),"",MessageType.TEXT,confirmedJList.getSelectedValuesList().toArray());
                 textFieldInput.setText("");
             }
+            //text+image message
             else if (selectedFile != null && !Objects.equals(textFieldInput.getText(), "")) {
                 sendMessage(textFieldInput.getText(), selectedFile.getAbsolutePath(), MessageType.TEXT_IMAGE, confirmedJList.getSelectedValuesList().toArray());
                 textFieldInput.setText("");
                 selectedFile = null;
             }
+            //image only message
             else if (selectedFile != null){
                 sendMessage("Image message", selectedFile.getAbsolutePath(), MessageType.IMAGE, confirmedJList.getSelectedValuesList().toArray());
                 selectedFile = null;
             }
         });
+
+        //fires when attachment button is pressed
         attachFileButton.addActionListener(actionEvent -> {
             if (fileChooser.showOpenDialog(chatPanel) == JFileChooser.APPROVE_OPTION) {
                 selectedFile = fileChooser.getSelectedFile();
             };
         });
+
+        //mouse-listeners for right-click avatar display
+        jlistOnline.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    int clickedIndex = jlistOnline.locationToIndex(e.getPoint());
+                    avatarPopup(onlineListModel.getElementAt(clickedIndex));
+                }
+            }
+        });
+        jListContacts.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    int clickedIndex = jListContacts.locationToIndex(e.getPoint());
+                    avatarPopup(contactListModel.getElementAt(clickedIndex));
+                }
+            }
+        });
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                disconnect();
+                clientController.writeContactFile();
+            }
+        });
+    }
+    /**
+     * displays a Users avatar in a message dialog
+     * fires when a user is right-clicked in JList object
+     * @param user  A user object
+     * @author Alexandra Koch
+     */
+    private void avatarPopup(User user) {
+        JOptionPane.showMessageDialog(null,  byteArrToImageIcon(user.getAvatarAsByteBuffer()));
     }
 
     public User getUser() {

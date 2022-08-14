@@ -2,7 +2,6 @@ package client.controller;
 
 import entity.User;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 
 /**
@@ -16,6 +15,7 @@ public interface IConnectionHandler {
     /**
      *
      */
+    void contactsUpdatedCallback(HashSet<User> contactSet);
     void connectionOpenedCallback(String connected, User u);
     /**
      *

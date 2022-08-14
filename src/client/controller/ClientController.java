@@ -31,10 +31,10 @@ import java.util.concurrent.*;
  * 4, Receive messages from User(s) - through Server: [x]
  * <p>
  * 5, Display connected User(s): [X]
- * 6, Add connected users to a Contact list: [] <--
- * 7, Save contact list on local storage ON client disconnect and exit:  [] <--
- * 8, Load contact list from local storage On client connect and startup: [] <--
- * 9, Select recipients of message from Contact list: [] <--
+ * 6, Add connected users to a Contact list: [X] <--
+ * 7, Save contact list on local storage ON client disconnect and exit:  [X] <--
+ * 8, Load contact list from local storage On client connect and startup: [X] <--
+ * 9, Select recipients of message from Contact list: [X] <--
  * 10, Select recipients of message from Online list: [x] <---
  * <p>
  * All funcitionality described above - with exception to 7 & 8 -
@@ -68,6 +68,7 @@ public class ClientController {
     private  InputStream is;
     private  ObjectOutputStream oos;
     private  OutputStream os;
+    private ContactListFileHandler contactFileHandler;
 
     // threads.
     private ExecutorService threadPool;
@@ -133,9 +134,14 @@ public class ClientController {
             return user.getUsername() + " already in contact list";
         }
         else{
-            // add contact to list
+            userContactList.add(user);
+            connectionHandler.contactsUpdatedCallback(userContactList);
+            return "User added";
         }
-        return "operation failed";
+    }
+    public void removeContact(User user){
+        userContactList.remove(user);
+        connectionHandler.contactsUpdatedCallback(userContactList);
     }
     /**
      * @author twgust
@@ -161,6 +167,12 @@ public class ClientController {
                 // execute the runnable(s) with thread pool
                 threadPool.execute(receiveMessage);
                 threadPool.execute(new ResponseHandler());
+                contactFileHandler = new ContactListFileHandler(user);
+                userContactList = contactFileHandler.readContactFile();
+                if (userContactList == null) {
+                    userContactList = new HashSet<>();
+                }
+                connectionHandler.contactsUpdatedCallback(userContactList);
             }
         }catch (InterruptedException | ExecutionException e){
             e.printStackTrace();
@@ -629,5 +641,9 @@ public class ClientController {
             return clientSocket.getLocalPort();
         }
         return -1;
+    }
+
+    public void writeContactFile() {
+        contactFileHandler.writeContactFile(userContactList);
     }
 }
