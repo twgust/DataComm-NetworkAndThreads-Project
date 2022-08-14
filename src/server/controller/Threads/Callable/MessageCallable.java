@@ -17,6 +17,7 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 /**
+ * Callable - asynchronous message sending task invoked from ObjectSenderThread
  * @author twgust
  */
 public class MessageCallable implements Callable<Client> {
@@ -28,6 +29,14 @@ public class MessageCallable implements Callable<Client> {
     private final UserConnectionEvent userConnectionEvent;
     private final UnsentMessageBuffer unsentMessageBuffer;
 
+    /**
+     * @author twgust
+     * @param logger reference to global logger
+     * @param message the message which is going to be sent
+     * @param client the receiving client
+     * @param event a UserConnectionEvent, should we discover that a client has disconnected we can invoke .onUserDisconnect()
+     * @param unsentMessageBuffer if they have disconnected, add the message to the buffer of unsent messages
+     */
     public MessageCallable(ServerLogger logger, Message message, Client client, UserConnectionEvent event, UnsentMessageBuffer unsentMessageBuffer) {
         this.logger = logger;
         this.message = message;
@@ -37,6 +46,7 @@ public class MessageCallable implements Callable<Client> {
     }
 
     /**
+     * @author twgust
      * @return returns ObjectOutputStream in a not busy state
      * @throws Exception if it throws exception close the socket
      */

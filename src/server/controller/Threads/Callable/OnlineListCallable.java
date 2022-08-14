@@ -11,6 +11,8 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 /**
+ *
+ * Callable - asynchronous 'update online lists' task invoked from ObjectSenderThread on user connect/disconnect
  * @author twgust
  */
 public class OnlineListCallable implements Callable<Client> {

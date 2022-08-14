@@ -32,7 +32,7 @@ public class ClientHandlerThread {
     private ThreadPoolExecutor clientHandlerThreadPool;
 
     private final MessageReceivedEvent messageReceivedEvent;
-    private final UserConnectionEvent userConnectionEvent;
+   // private final UserConnectionEvent userConnectionEvent;
 
     /**
      *
@@ -44,7 +44,7 @@ public class ClientHandlerThread {
         queue = new LinkedList<>();
         clientHandlerThread = new ThreadAssigner();
         this.messageReceivedEvent = messageReceivedEvent;
-        this.userConnectionEvent = userConnectionEvent;
+       // this.userConnectionEvent = userConnectionEvent;
         this.logger = logger;
     }
 

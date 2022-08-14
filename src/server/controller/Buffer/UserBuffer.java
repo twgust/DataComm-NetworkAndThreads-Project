@@ -9,15 +9,12 @@ import java.util.Set;
  */
 public class UserBuffer {
     private HashSet<User> onlineBuffer;
-    private User user;
-
-    public UserBuffer(){
+    public UserBuffer() {
         onlineBuffer = new HashSet<>();
     }
 
     public synchronized void put(User user){
         onlineBuffer.add(user);
-        this.user = user;
         notify();
     }
 
