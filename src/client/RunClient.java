@@ -15,40 +15,25 @@ public class RunClient {
         // distinguish between local clients by port number, not remote address// gui starts connection to server because a user will click connect
 
         String ip = "127.0.0.1";
-        ClientController c1 = new ClientController(ip, 42652, "CLIENT-1");
-        ClientController c2 = new ClientController(ip, 42652, "CLIENT-2");
-        ClientController c3 = new ClientController(ip, 42652, "CLIENT-3");
-        ClientController c4 = new ClientController(ip, 42652, "CLIENT-4");
-        ClientController c5 = new ClientController(ip, 42652, "CLIENT-5");
+        ClientController c1 = new ClientController( "CLIENT-1");
+        ClientController c2 = new ClientController("CLIENT-2");
+        ClientController c3 = new ClientController("CLIENT-3");
+        ClientController c4 = new ClientController("CLIENT-4");
+        ClientController c5 = new ClientController("CLIENT-5");
         ClientGUI g1 = new ClientGUI(c1);
         ClientGUI g2 = new ClientGUI(c2);
         ClientGUI g3 = new ClientGUI(c3);
         ClientGUI g4 = new ClientGUI(c4);
         ClientGUI g5 = new ClientGUI(c5);
         ExecutorService threadpool = Executors.newFixedThreadPool(25);
-        threadpool.submit(() -> {
-            g1.connect("user-6", "src/client/images/circle_of_fifths.jpg");
-            //g1.sendMessage("damn that's not great usage of threads", MessageType.TEXT);
-
-        });
-        threadpool.submit(() -> {
-            g2.connect("user-7", "src/client/images/circle_of_fifths.jpg");
-
-        });
-        threadpool.submit(() -> {
-            g3.connect("user-8", "src/client/images/circle_of_fifths.jpg");
-            //  g3.sendMessage("hellloooo im u8", MessageType.TEXT);
-
-        });
-        threadpool.submit(() -> {
-            g4.connect("user-9", "src/client/images/music-circle-of-fifths.jpg");
-
-        });
-        threadpool.submit(() -> {
-            g5.connect("user-10", "src/client/images/circle_of_fifths.jpg");
-
-        });
-        threadpool.submit(() -> {
+        //g1.sendMessage("damn that's not great usage of threads", MessageType.TEXT);
+        threadpool.submit(g1::connect);
+        threadpool.submit(g2::connect);
+        //  g3.sendMessage("hellloooo im u8", MessageType.TEXT);
+        threadpool.submit(g3::connect);
+        threadpool.submit(g4::connect);
+        threadpool.submit(g5::connect);
+ /*       threadpool.submit(() -> {
             //  g2.sendMessage("agree", MessageType.TEXT);
 
         });
@@ -84,8 +69,6 @@ public class RunClient {
         threadpool.submit(() -> {
             try{
                 Thread.sleep(2500);
-                g1.connect("user-6", "src/client/images/circle_of_fifths.jpg");
-                Thread.sleep(50);
                 g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
                 g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
                 g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
@@ -96,6 +79,6 @@ public class RunClient {
                 e.printStackTrace();
             }
 
-        });
+        });*/
     }
 }

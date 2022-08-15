@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="Added ability to send text, image and text-image messages through GUI, added framework swing layout to add contact list functionality.">
-      <change afterPath="$PROJECT_DIR$/src/client/controller/ContactListFileHandler.java" afterDir="false" />
+    <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="Updated workspace.xml">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/RunClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/RunClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/controller/ClientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/controller/IConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/IConnectionHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/view/ClientGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/view/ClientGUI.java" afterDir="false" />
@@ -44,21 +44,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "jdk.selected.JAVA_MODULE": "18",
-    "last_opened_file_path": "C:/Users/sweet/Documents/GitHub/DataComm-NetworkAndThreads-Project",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "SDKs",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;18&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/sweet/Documents/GitHub/DataComm-NetworkAndThreads-Project&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\gusta\Documents\Repositories\DataComm-NetworkAndThreads-Project\src\client\clientStorage" />
@@ -70,7 +70,7 @@
       <recent name="server" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.RunClient">
+  <component name="RunManager" selected="Application.server.RunServer">
     <configuration name="RunClient" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="client.RunClient" />
       <module name="DataComm-NetworkAndThreads-Project" />
@@ -121,8 +121,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.RunClient" />
         <item itemvalue="Application.server.RunServer" />
+        <item itemvalue="Application.RunClient" />
       </list>
     </recent_temporary>
   </component>
@@ -166,7 +166,21 @@
       <workItem from="1660408035407" duration="6466000" />
       <workItem from="1660416081299" duration="4765000" />
       <workItem from="1660473499455" duration="7977000" />
+      <workItem from="1660573017880" duration="3816000" />
     </task>
+    <task id="LOCAL−00001" summary="Added contact saving and loading functionality">
+      <created>1660507236994</created>
+      <option name="number" value="LOCAL−00001" />
+      <option name="presentableId" value="LOCAL−00001" />
+      <updated>1660507236994</updated>
+    </task>
+    <task id="LOCAL−00002" summary="Updated workspace.xml">
+      <created>1660507256721</created>
+      <option name="number" value="LOCAL−00002" />
+      <option name="presentableId" value="LOCAL−00002" />
+      <updated>1660507256721</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -183,6 +197,11 @@
       </map>
     </option>
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Added contact saving and loading functionality" />
+    <MESSAGE value="Updated workspace.xml" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated workspace.xml" />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
@@ -192,17 +211,17 @@
         </breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/client/view/ClientGUI.java</url>
-          <line>355</line>
+          <line>397</line>
           <option name="timeStamp" value="5" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/client/view/ClientGUI.java</url>
-          <line>343</line>
+          <line>385</line>
           <option name="timeStamp" value="6" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/client/view/ClientGUI.java</url>
-          <line>344</line>
+          <line>386</line>
           <option name="timeStamp" value="7" />
         </line-breakpoint>
       </breakpoints>

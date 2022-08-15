@@ -16,6 +16,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
@@ -62,10 +65,27 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
 
     /**
      * Attempts to connect the user to the server
-     * @param username desired username
+     * @author Alexandra Koch
      */
-    public void connect(String username, String path){
-        clientController.connectToServer(username, path);
+    public void connect(){
+        InetSocketAddress socketAddress = getIPCallback();
+        while (socketAddress == null) {
+            socketAddress = getIPCallback();
+        }
+        String username = JOptionPane.showInputDialog("Input username");
+        String path;
+        JFileChooser avatarChooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "Images, jpg, png", "jpg","png");
+        avatarChooser.setFileFilter(filter);
+        if (fileChooser.showOpenDialog(chatPanel) == JFileChooser.APPROVE_OPTION) {
+            path = fileChooser.getSelectedFile().getPath();
+        }
+        else {
+            path = "";
+        }
+
+        clientController.connectToServer(username, path, socketAddress);
     }
 
     /**
@@ -199,6 +219,29 @@ public class ClientGUI implements IConnectionHandler, IMessageReceivedHandler {
             JOptionPane.showMessageDialog(null, img);
 
         });
+    }
+
+    /**
+     * @return returns an InetSocketAddress object
+     * @author Alexandra Koch
+     */
+    @Override
+    public InetSocketAddress getIPCallback() {
+        InetAddress ip;
+        InetSocketAddress socketAddress = null;
+        try {
+            ip = InetAddress.getByName(JOptionPane.showInputDialog("Enter IP", "127.0.0.1"));
+        } catch (UnknownHostException e) {
+            return null;
+
+        }
+        int port = Integer.parseInt(JOptionPane.showInputDialog("Enter port", "42652"));
+        try {
+            socketAddress = new InetSocketAddress(ip, port);
+        } catch (Exception e) {
+            return null;
+        }
+        return socketAddress;
     }
     private synchronized ImageIcon byteArrToImageIcon(byte[] img){
 

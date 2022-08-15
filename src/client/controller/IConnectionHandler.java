@@ -2,6 +2,7 @@ package client.controller;
 
 import entity.User;
 
+import java.net.InetSocketAddress;
 import java.util.HashSet;
 
 /**
@@ -25,4 +26,6 @@ public interface IConnectionHandler {
      *
      */
     void exceptionCallback(Exception e, String errorMessage);
+
+    InetSocketAddress getIPCallback();
 }

@@ -59,8 +59,8 @@ public class ClientController {
     private HashSet<User> userContactList;
 
 
-    private final String ip;
-    private final int port;
+    private String ip;
+    private int port;
 
     private  Socket clientSocket;
 
@@ -82,12 +82,8 @@ public class ClientController {
 
     /**
      * @author twgust
-     * @param ip ip or server
-     * @param port port of server
      */
-    public ClientController(String ip, int port, String id) {
-        this.port = port;
-        this.ip = ip;
+    public ClientController(String id) {
         this.id = id;
 
         // since connection is only done once, we might as well reuse that single Thread.
@@ -149,14 +145,15 @@ public class ClientController {
      * @param username user
      * @param path path of image to be sent to server
      */
-    public void connectToServer(String username, String path) {
+    public void connectToServer(String username, String path, InetSocketAddress socketAddress) {
         threadPool = Executors.newFixedThreadPool(4);
-        connect = new ClientConnect(username, path);
-
+        connect = new ClientConnect(username, path, socketAddress);
+//        boolean success = false;
         FutureTask<String> connectTask = new FutureTask<>(connect, "good");
         threadPool.submit(connectTask);
         try{
             if (connectTask.get().equals("good")) {
+//                success = true;
                 connectionHandler.connectionOpenedCallback
                         ("Success established connection to: " + clientSocket.getInetAddress().toString(), user);
                 // initialize the data structures
@@ -177,6 +174,34 @@ public class ClientController {
         }catch (InterruptedException | ExecutionException e){
             e.printStackTrace();
         }
+/*        while (!success) {
+            connect = new ClientConnect(username, path, connectionHandler.getIPCallback());
+            connectTask = new FutureTask<>(connect, "good");
+            threadPool.submit(connectTask);
+            try{
+                if (connectTask.get().equals("good")) {
+                    success = true;
+                    connectionHandler.connectionOpenedCallback
+                            ("Success established connection to: " + clientSocket.getInetAddress().toString(), user);
+                    // initialize the data structures
+                    onlineUserHashSet = new HashSet<>();
+                    receiveMessage = new ReceiveMessage();
+                    objectBuffer = new ObjectBuffer();
+
+                    // execute the runnable(s) with thread pool
+                    threadPool.execute(receiveMessage);
+                    threadPool.execute(new ResponseHandler());
+                    contactFileHandler = new ContactListFileHandler(user);
+                    userContactList = contactFileHandler.readContactFile();
+                    if (userContactList == null) {
+                        userContactList = new HashSet<>();
+                    }
+                    connectionHandler.contactsUpdatedCallback(userContactList);
+                }
+            }catch (InterruptedException | ExecutionException e){
+                e.printStackTrace();
+            }
+        }*/
 
 
     }
@@ -484,15 +509,19 @@ public class ClientController {
     private class ClientConnect implements Runnable {
         private final String username;
         private final String path;
+        private final InetSocketAddress socketAddress;
 
         /**
          * Constructor, input parameters fetched from listening to ui components
          * @param username string representation of a username
          * @param imgPath string representation of path of image (user avatar)
          */
-        public ClientConnect(String username, String imgPath) {
+        public ClientConnect(String username, String imgPath, InetSocketAddress socketAddress) {
             this.username = username;
             this.path = imgPath;
+            this.socketAddress = socketAddress;
+            ip = socketAddress.getAddress().toString();
+            port = socketAddress.getPort();
         }
 
         /**
@@ -513,10 +542,9 @@ public class ClientController {
 
                 // step 2: create user object
                 user = new User(username,imageInByteArr);
-                InetAddress address = InetAddress.getByName(ip);
 
                 // step 3: establish connection to server
-                clientSocket = new Socket(address, port);
+                clientSocket = new Socket(socketAddress.getAddress(), socketAddress.getPort());
                 setupStreams(clientSocket);
 
                 // step 4: write user object to server
