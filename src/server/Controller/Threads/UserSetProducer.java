@@ -1,19 +1,18 @@
-package server.controller.Threads;
+package server.Controller.Threads;
 
 
 import entity.ConnectionEventType;
 import entity.User;
 import entity.UserSet;
 import server.ServerInterface.UserSetProducedEvent;
-import server.controller.Buffer.UserBuffer;
-import server.controller.ServerLogger;
+import server.Controller.Buffer.UserBuffer;
+import server.Controller.ServerLogger;
 
 import java.time.LocalTime;
 import java.util.HashSet;
-import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+
 /**
  * @author twgust
  * Typically invoked after a user connection or disconnect.

@@ -1,9 +1,9 @@
-package server.controller.Buffer;
+package server.Controller.Buffer;
 
 import entity.User;
 
 import java.util.HashSet;
-import java.util.Set;
+
 /**
  * @author twgust
  */

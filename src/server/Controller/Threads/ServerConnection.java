@@ -1,11 +1,11 @@
-package server.controller.Threads;
+package server.Controller.Threads;
 
 import entity.User;
 import server.Entity.Client;
 import server.RunServer;
-import server.controller.Buffer.ClientBuffer;
+import server.Controller.Buffer.ClientBuffer;
 import server.ServerInterface.UserConnectionEvent;
-import server.controller.ServerLogger;
+import server.Controller.ServerLogger;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;

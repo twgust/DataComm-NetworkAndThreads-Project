@@ -1,14 +1,14 @@
-package server.controller.Threads;
+package server.Controller.Threads;
 
 import entity.*;
 import server.Entity.Client;
 import server.ServerInterface.UserConnectionEvent;
-import server.controller.Buffer.ClientBuffer;
-import server.controller.Buffer.UnsentMessageBuffer;
-import server.controller.Buffer.SendableBuffer;
-import server.controller.ServerLogger;
-import server.controller.Threads.Callable.MessageCallable;
-import server.controller.Threads.Callable.OnlineListCallable;
+import server.Controller.Buffer.ClientBuffer;
+import server.Controller.Buffer.UnsentMessageBuffer;
+import server.Controller.Buffer.SendableBuffer;
+import server.Controller.ServerLogger;
+import server.Controller.Threads.Callable.MessageCallable;
+import server.Controller.Threads.Callable.OnlineListCallable;
 
 import java.time.LocalTime;
 import java.util.*;

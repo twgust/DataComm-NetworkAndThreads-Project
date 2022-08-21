@@ -1,5 +1,5 @@
 package server;
-import server.controller.ServerController;
+import server.Controller.ServerController;
 import server.view.ServerGUI;
 
 import javax.swing.text.BadLocationException;
