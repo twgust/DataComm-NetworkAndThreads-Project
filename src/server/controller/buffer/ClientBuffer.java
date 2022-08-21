@@ -78,6 +78,7 @@ public class ClientBuffer {
     }
 
     /**
+     * NOT USED
      * @author twgust
      * @param user the user to look up.
      * @return true if user contains buffer
@@ -96,6 +97,7 @@ public class ClientBuffer {
     }
 
     /**
+     * NOT USED
      * @author twgust
      * @return the complete keySet of buffer
      */

@@ -32,7 +32,7 @@ public class ServerLogger {
             e.printStackTrace();
         }
     }
-    public void logEventToFile(String info) throws IOException {
+    public synchronized void logEventToFile(String info) throws IOException {
         fw.write(info);
         fw.flush();
     }

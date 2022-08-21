@@ -41,7 +41,12 @@ public class UnsentMessageBuffer {
         if(messages.isEmpty()){
             return null;
         }
-        // 1) check first if buffer has a message for user
+        // 1) check first if buffer has a message for user,
+        // since HashMap offers O(1) look-up we can quickly decide whether there is work to do or not.
+
+        // This should most likely not run in here but in the ServerController/some thread instead.
+        // Since the synchronized keyword in function will act as a bottleneck as the amount of unsentMessages
+        // and connecting clients goes up --> more time spent waiting for threads to release the lock (Starvation?)
         if(messages.containsValue(user)){
             // 2) if it does then start iterating of the keyset (message)
             List<Message> unsentMessages = new ArrayList<>();
