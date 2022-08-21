@@ -22,6 +22,8 @@ import java.util.logging.Level;
  * The important difference between ClientHandlers buffer and Client buffer lies in data structure choice
  * ClientBuffer is used for look up and consists of a hashmap<User,Client>
  * ClientHandler is a FIFO queue which handles and assigns a MessageReceiver Thread to clients as they establish Connection
+ *
+ * flow: Controller --(starts)--> ClientHandler --(starts)--> ThreadAssigner --(starts)--> MessageReceiver
  */
 public class ClientHandlerThread {
     private final ThreadAssigner clientHandlerThread;
@@ -77,7 +79,7 @@ public class ClientHandlerThread {
 
     /**
      * Queues a client according to fifo principles
-     * @param client
+     * @param client client to be queued
      */
     public synchronized void queueClientForProcessing(Client client) {
         queue.addLast(client);
@@ -88,7 +90,7 @@ public class ClientHandlerThread {
      * @return process client according to FIFO principle
      * @throws InterruptedException wait can throw interrupted-exception of thread is interrupted
      */
-    private synchronized Client processClient() throws InterruptedException {
+    private synchronized Client processNextClient() throws InterruptedException {
         while (queue.isEmpty()) {
             ClientHandlerThread.this.wait();
         }
@@ -113,7 +115,7 @@ public class ClientHandlerThread {
                     logger.logEvent(Level.INFO, thread, logThreadAssignerWaitingMsg, LocalTime.now());
 
                     // fetch client from front of queue
-                    Client client = processClient();
+                    Client client = processNextClient();
                     String ip = "[" + client.getSocket().getLocalAddress().toString() + ":" + client.getSocket().getLocalPort() + "]";
 
                     // debug

@@ -16,69 +16,10 @@ public class RunClient {
 
         String ip = "127.0.0.1";
         ClientController c1 = new ClientController( "CLIENT-1");
-        ClientController c2 = new ClientController("CLIENT-2");
-        ClientController c3 = new ClientController("CLIENT-3");
-        ClientController c4 = new ClientController("CLIENT-4");
-        ClientController c5 = new ClientController("CLIENT-5");
         ClientGUI g1 = new ClientGUI(c1);
-        ClientGUI g2 = new ClientGUI(c2);
-        ClientGUI g3 = new ClientGUI(c3);
-        ClientGUI g4 = new ClientGUI(c4);
-        ClientGUI g5 = new ClientGUI(c5);
         ExecutorService threadpool = Executors.newFixedThreadPool(25);
-        //g1.sendMessage("damn that's not great usage of threads", MessageType.TEXT);
         threadpool.submit(g1::connect);
-        threadpool.submit(g2::connect);
-        //  g3.sendMessage("hellloooo im u8", MessageType.TEXT);
-        threadpool.submit(g3::connect);
-        threadpool.submit(g4::connect);
-        threadpool.submit(g5::connect);
- /*       threadpool.submit(() -> {
-            //  g2.sendMessage("agree", MessageType.TEXT);
-
-        });
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        User[] recipientUsersTest = {g1.getUser(), g2.getUser(), g3.getUser(), g4.getUser(), g5.getUser()};
-        threadpool.submit(() -> {
-            g2.sendMessage("heloooo im u7", "", MessageType.TEXT, recipientUsersTest);
-            //    g3.sendMessage("hellloooo im u8", MessageType.TEXT);
-        });
-        threadpool.submit(() -> {
-            g3.sendMessage("AAA", "", MessageType.TEXT, recipientUsersTest);
-            g3.sendMessage("AAA", "", MessageType.TEXT, recipientUsersTest);
-            g3.sendMessage("AAA", "", MessageType.TEXT, recipientUsersTest);
-            g3.sendMessage("AAA", "", MessageType.TEXT, recipientUsersTest);
-            g3.sendMessage("AAA", "", MessageType.TEXT, recipientUsersTest);
-            g1.disconnect();
-
-            //g1.connect("user-6", "src/client/images/circle_of_fifths.jpg");
 
 
-        });
-        threadpool.submit(() -> {
-            g4.sendMessage("BBB", "src/client/images/cat.jpg", MessageType.TEXT_IMAGE, recipientUsersTest);
-            g4.sendMessage("BBB", "", MessageType.TEXT, recipientUsersTest);
-            g4.sendMessage("BBB", "", MessageType.TEXT, recipientUsersTest);
-            g4.sendMessage("BBB", "", MessageType.TEXT, recipientUsersTest);
-            g4.sendMessage("BBB", "", MessageType.TEXT, recipientUsersTest);
-        });
-        threadpool.submit(() -> {
-            try{
-                Thread.sleep(2500);
-                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
-                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
-                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
-                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
-                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
-                g5.sendMessage("CCC", null, MessageType.TEXT, recipientUsersTest);
-            }catch (InterruptedException e){
-                e.printStackTrace();
-            }
-
-        });*/
     }
 }

@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="Updated workspace.xml">
+    <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/RunClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/RunClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/controller/ClientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/ClientController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/controller/IConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/controller/IConnectionHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/client/view/ClientGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/view/ClientGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/Threads/Callable/MessageCallable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Threads/Callable/MessageCallable.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/Threads/Callable/OnlineListCallable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Threads/Callable/OnlineListCallable.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/Threads/ClientHandlerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/Threads/ClientHandlerThread.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,6 +30,8 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="jar://$USER_HOME$/.jdks/openjdk-18.0.1/lib/src.zip!/java.base/java/io/ObjectInputStream.java" root0="SKIP_INSPECTION" />
+    <setting file="jar://$USER_HOME$/.jdks/openjdk-18.0.1/lib/src.zip!/java.base/java/net/Socket.java" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/src/server/controller/Threads/ObjectSenderThread.java" root0="SKIP_INSPECTION" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -70,7 +72,7 @@
       <recent name="server" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.server.RunServer">
+  <component name="RunManager" selected="Application.RunClient">
     <configuration name="RunClient" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="client.RunClient" />
       <module name="DataComm-NetworkAndThreads-Project" />
@@ -117,12 +119,11 @@
     <list>
       <item itemvalue="Application.RunClient" />
       <item itemvalue="Application.server.RunServer" />
-      <item itemvalue="Multirun.Test Server and Client" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.server.RunServer" />
         <item itemvalue="Application.RunClient" />
+        <item itemvalue="Application.server.RunServer" />
       </list>
     </recent_temporary>
   </component>

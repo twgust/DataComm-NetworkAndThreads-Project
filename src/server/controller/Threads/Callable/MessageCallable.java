@@ -17,8 +17,8 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 /**
- * Callable - asynchronous message sending task invoked from ObjectSenderThread
  * @author twgust
+ * Callable - asynchronous message sending task invoked from ObjectSenderThread
  */
 public class MessageCallable implements Callable<Client> {
     private final ServerLogger logger;
