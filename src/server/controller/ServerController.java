@@ -1,16 +1,16 @@
-package server.Controller;
+package server.controller;
 
 import entity.*;
-import server.Entity.Client;
-import server.ServerInterface.*;
-import server.Controller.Buffer.ClientBuffer;
-import server.Controller.Buffer.UnsentMessageBuffer;
-import server.Controller.Buffer.SendableBuffer;
-import server.Controller.Buffer.UserBuffer;
-import server.Controller.Threads.ClientHandlerThread;
-import server.Controller.Threads.ObjectSenderThread;
-import server.Controller.Threads.ServerConnection;
-import server.Controller.Threads.UserSetProducer;
+import server.entity.Client;
+import server.serverinterface.*;
+import server.controller.buffer.ClientBuffer;
+import server.controller.buffer.UnsentMessageBuffer;
+import server.controller.buffer.SendableBuffer;
+import server.controller.buffer.UserBuffer;
+import server.controller.threads.ClientHandlerThread;
+import server.controller.threads.ObjectSenderThread;
+import server.controller.threads.ServerConnection;
+import server.controller.threads.UserSetProducer;
 
 import java.io.*;
 import java.time.LocalTime;

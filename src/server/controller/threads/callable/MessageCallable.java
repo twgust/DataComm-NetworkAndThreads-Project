@@ -1,12 +1,12 @@
-package server.Controller.Threads.Callable;
+package server.controller.threads.callable;
 
 import entity.Message;
 import entity.MessageType;
 import entity.User;
-import server.Entity.Client;
-import server.ServerInterface.UserConnectionEvent;
-import server.Controller.Buffer.UnsentMessageBuffer;
-import server.Controller.ServerLogger;
+import server.entity.Client;
+import server.serverinterface.UserConnectionEvent;
+import server.controller.buffer.UnsentMessageBuffer;
+import server.controller.ServerLogger;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

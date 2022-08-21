@@ -1,7 +1,7 @@
-package server.Controller;
+package server.controller;
 
 
-import server.ServerInterface.LoggerCallBack;
+import server.serverinterface.LoggerCallBack;
 
 import java.io.File;
 import java.io.FileWriter;

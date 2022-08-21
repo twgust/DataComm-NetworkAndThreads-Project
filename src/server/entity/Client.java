@@ -1,4 +1,4 @@
-package server.Entity;
+package server.entity;
 
 import entity.User;
 

@@ -1,12 +1,12 @@
-package server.Controller.Threads;
+package server.controller.threads;
 
 
 import entity.ConnectionEventType;
 import entity.User;
 import entity.UserSet;
-import server.ServerInterface.UserSetProducedEvent;
-import server.Controller.Buffer.UserBuffer;
-import server.Controller.ServerLogger;
+import server.serverinterface.UserSetProducedEvent;
+import server.controller.buffer.UserBuffer;
+import server.controller.ServerLogger;
 
 import java.time.LocalTime;
 import java.util.HashSet;

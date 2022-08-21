@@ -1,11 +1,11 @@
-package server.Controller.Threads;
+package server.controller.threads;
 
 import entity.Message;
-import server.Entity.Client;
-import server.ServerInterface.MessageReceivedEvent;
+import server.entity.Client;
+import server.serverinterface.MessageReceivedEvent;
 
-import server.ServerInterface.UserConnectionEvent;
-import server.Controller.ServerLogger;
+import server.serverinterface.UserConnectionEvent;
+import server.controller.ServerLogger;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;

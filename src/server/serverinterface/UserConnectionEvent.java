@@ -1,7 +1,6 @@
-package server.ServerInterface;
+package server.serverinterface;
 
 import entity.User;
-import server.Entity.Client;
 
 /**
  * @author twgust

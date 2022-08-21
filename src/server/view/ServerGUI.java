@@ -1,7 +1,7 @@
 package server.view;
 
-import server.ServerInterface.LoggerCallBack;
-import server.Controller.ServerController;
+import server.serverinterface.LoggerCallBack;
+import server.controller.ServerController;
 
 import javax.swing.*;
 import javax.swing.text.*;

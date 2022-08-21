@@ -1,7 +1,7 @@
-package server.Controller.Buffer;
+package server.controller.buffer;
 
 import entity.User;
-import server.Entity.Client;
+import server.entity.Client;
 
 
 import java.util.Collection;

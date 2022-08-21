@@ -1,4 +1,4 @@
-package server.ServerInterface;
+package server.serverinterface;
 
 import entity.Message;
 

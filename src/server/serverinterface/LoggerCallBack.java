@@ -1,6 +1,5 @@
-package server.ServerInterface;
+package server.serverinterface;
 
-import java.time.LocalTime;
 import java.util.logging.Level;
 
 public interface LoggerCallBack {

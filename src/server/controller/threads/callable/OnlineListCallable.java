@@ -1,8 +1,8 @@
-package server.Controller.Threads.Callable;
+package server.controller.threads.callable;
 
 import entity.Sendables;
-import server.Entity.Client;
-import server.Controller.ServerLogger;
+import server.entity.Client;
+import server.controller.ServerLogger;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
