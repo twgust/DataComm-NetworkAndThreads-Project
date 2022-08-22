@@ -1,4 +1,4 @@
-package client.controller;
+package entity;
 
 import entity.Sendables;
 

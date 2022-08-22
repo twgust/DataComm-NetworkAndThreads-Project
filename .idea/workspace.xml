@@ -4,11 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="">
+    <list default="true" id="44f85c0d-3b97-4078-b430-2fd1d21207e5" name="Changes" comment="Updated workspace.xml">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/ServerLogger.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerLogger.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/buffer/ClientBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/buffer/ClientBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/server/controller/buffer/UnsentMessageBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/buffer/UnsentMessageBuffer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/client/controller/ObjectBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/entity/ObjectBuffer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/ServerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/ServerController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/buffer/ClientBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/entity/buffer/ClientBuffer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/buffer/SendableBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/entity/buffer/SendableBuffer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/buffer/UnsentMessageBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/entity/buffer/UnsentMessageBuffer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/buffer/UserBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/entity/buffer/UserBuffer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/threads/ObjectSenderThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/threads/ObjectSenderThread.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/threads/ServerConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/threads/ServerConnection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/threads/UserSetProducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/threads/UserSetProducer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/server/controller/threads/callable/MessageCallable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/server/controller/threads/callable/MessageCallable.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,13 +78,13 @@
       <recent name="server" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.RunClient">
-    <configuration name="RunClient" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="Application.client.RunClient">
+    <configuration name="client.RunClient" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="client.RunClient" />
       <module name="DataComm-NetworkAndThreads-Project" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="client.controller.*" />
+          <option name="PATTERN" value="entity.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -116,12 +123,12 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Application.RunClient" />
+      <item itemvalue="Application.client.RunClient" />
       <item itemvalue="Application.server.RunServer" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.RunClient" />
+        <item itemvalue="Application.client.RunClient" />
         <item itemvalue="Application.server.RunServer" />
       </list>
     </recent_temporary>
@@ -167,6 +174,7 @@
       <workItem from="1660416081299" duration="4765000" />
       <workItem from="1660473499455" duration="7977000" />
       <workItem from="1660573017880" duration="3816000" />
+      <workItem from="1661134295806" duration="106000" />
     </task>
     <task id="LOCAL−00001" summary="Added contact saving and loading functionality">
       <created>1660507236994</created>

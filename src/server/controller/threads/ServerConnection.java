@@ -3,7 +3,7 @@ package server.controller.threads;
 import entity.User;
 import server.entity.Client;
 import server.RunServer;
-import server.controller.buffer.ClientBuffer;
+import server.entity.buffer.ClientBuffer;
 import server.serverinterface.UserConnectionEvent;
 import server.controller.ServerLogger;
 

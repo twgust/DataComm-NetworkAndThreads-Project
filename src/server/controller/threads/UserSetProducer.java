@@ -5,7 +5,7 @@ import entity.ConnectionEventType;
 import entity.User;
 import entity.UserSet;
 import server.serverinterface.UserSetProducedEvent;
-import server.controller.buffer.UserBuffer;
+import server.entity.buffer.UserBuffer;
 import server.controller.ServerLogger;
 
 import java.time.LocalTime;

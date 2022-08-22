@@ -5,7 +5,7 @@ import entity.MessageType;
 import entity.User;
 import server.entity.Client;
 import server.serverinterface.UserConnectionEvent;
-import server.controller.buffer.UnsentMessageBuffer;
+import server.entity.buffer.UnsentMessageBuffer;
 import server.controller.ServerLogger;
 
 import javax.imageio.ImageIO;
